@@ -1,0 +1,7 @@
+/Users/ck84/src/CCC/armadillo/CMakeFiles/install/local.dir
+/Users/ck84/src/CCC/armadillo/CMakeFiles/rebuild_cache.dir
+/Users/ck84/src/CCC/armadillo/CMakeFiles/edit_cache.dir
+/Users/ck84/src/CCC/armadillo/CMakeFiles/install/strip.dir
+/Users/ck84/src/CCC/armadillo/CMakeFiles/install.dir
+/Users/ck84/src/CCC/armadillo/CMakeFiles/list_install_components.dir
+/Users/ck84/src/CCC/armadillo/CMakeFiles/armadillo.dir
