@@ -34,8 +34,6 @@ if (CMAKE_VERSION VERSION_LESS 2.8.11)
   include_directories("${gtest_SOURCE_DIR}/include")
 endif()
 
-find_package(Boost 1.67 REQUIRED COMPONENTS
-             python37 numpy36)
 
 find_package(Armadillo REQUIRED)
 include_directories(${ARMADILLO_INCLUDE_DIRS})
@@ -51,6 +49,6 @@ set_property(TARGET CCC PROPERTY CXX_STANDARD 17)
 
 add_custom_target(test COMMAND echo "test")
 
-project (CCCPython)
-add_library(CCCPython CCCpy.cpp shannonEntropy.hpp ETC.hpp)
-target_link_libraries(CCCPython ${ARMADILLO_LIBRARIES})
+#project (CCCPython)
+#add_library(CCCPython CCCpy.cpp shannonEntropy.hpp ETC.hpp)
+#target_link_libraries(CCCPython ${ARMADILLO_LIBRARIES})
