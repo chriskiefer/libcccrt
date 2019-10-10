@@ -62,19 +62,30 @@ bool arma_eq(const ivec &v1, const ivec &v2) {
 }
 
 TEST(CCCTest, SubstituteTest) {
-    EXPECT_EQ(arma_eq(ETC::substitute({1,1,3}, ETC::makeETCPair(1,1)), {4,3}), 1);
-    EXPECT_EQ(arma_eq(ETC::substitute({-1,-1,-3}, ETC::makeETCPair(-1,-3)), {-1,0}), 1);
-    EXPECT_EQ(arma_eq(ETC::substitute({1,1,3,3,5,8,6,4,3,6,3,6,2,3,1,3,5,3,6,4,2,3,4,5,1,3,5,4,2,3}, ETC::makeETCPair(1,3)), {1,9,3,5,8,6,4,3,6,3,6,2,3,9,5,3,6,4,2,3,4,5,9,5,4,2,3}), 1);
+    EXPECT_EQ(arma_eq(get<0>(ETC::substitute({1,1,3}, ETC::makeETCPair(1,1))), {4,3}), 1);
+    EXPECT_EQ(arma_eq(get<0>(ETC::substitute({-1,-1,-3}, ETC::makeETCPair(-1,-3))), {-1,0}), 1);
+    EXPECT_EQ(arma_eq(get<0>(ETC::substitute({1,1,3,3,5,8,6,4,3,6,3,6,2,3,1,3,5,3,6,4,2,3,4,5,1,3,5,4,2,3}, ETC::makeETCPair(1,3))), {1,9,3,5,8,6,4,3,6,3,6,2,3,9,5,3,6,4,2,3,4,5,9,5,4,2,3}), 1);
 }
 TEST(CCCTest, ETCTest) {
     EXPECT_EQ(ETC::calc({1,0,1,0,3,3}),4);
     EXPECT_EQ(ETC::calc({1,4,5,3,3,3,5,5,7,5,7,7,7,7,8,2,4,9,2,4,6,7,8,5}),20);
     EXPECT_EQ(ETC::calc({1,4,5,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3}),8);
-
 }
+
 
 int main(int argc, char **argv) {
     cout << "CCC library tests\n";
     ::testing::InitGoogleTest(&argc, argv);
-    return RUN_ALL_TESTS();
+    int res =  RUN_ALL_TESTS();
+    
+    //perf testing
+    clock_t t = clock();
+    for(int i=0; i < 50; i++) {
+        ivec x(500);
+        for(int j=0; j<x.size(); j++) x[j] = rand() % 8;
+        cout << ETC::calc(x) << endl;
+    }
+    const double work_time = (clock() - t) / double(CLOCKS_PER_SEC) * 1000;
+    cout << work_time << " ms" << endl;
+    return res;
 }

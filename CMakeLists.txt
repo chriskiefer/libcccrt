@@ -35,12 +35,15 @@ if (CMAKE_VERSION VERSION_LESS 2.8.11)
 endif()
 
 
-find_package(Armadillo REQUIRED)
-include_directories(${ARMADILLO_INCLUDE_DIRS})
+#find_package(Armadillo REQUIRED)
+#include_directories(${ARMADILLO_INCLUDE_DIRS})
+
+include_directories(armadillo/include)
+add_subdirectory(hopscotch-map)
 
 add_executable(CCC main.cpp shannonEntropy.hpp ETC.hpp)
-target_link_libraries(CCC ${ARMADILLO_LIBRARIES})
-target_link_libraries(CCC gtest_main)
+#target_link_libraries(CCC ${ARMADILLO_LIBRARIES})
+target_link_libraries(CCC gtest_main tsl::hopscotch_map)
 
 
 #add_test(NAME example_test COMMAND example)

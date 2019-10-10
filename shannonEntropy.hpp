@@ -10,7 +10,8 @@ using namespace arma;
 struct shannonEntropy {
     
     typedef unordered_map<int, unsigned int> histoMap;
-    
+    typedef unordered_map<int, double> probMap;
+
     static shannonEntropy::histoMap calcDistribution(const ivec &seq) {
         shannonEntropy::histoMap histo;
         for (auto v: seq) {
