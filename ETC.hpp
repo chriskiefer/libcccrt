@@ -1,3 +1,23 @@
+// 1232302
+// 142302 -> -23, -12, -32, +14, +42
+// 14402 -> -42, -23, -30, +44, +40
+
+/*
+ 
+ 122233221 -> hf = 22
+ 143341 -> -12, -22(2), -23 / -32. -22, -21 / +14, +43,
+ 
+ 12334331
+ -> remove: 12[]4[]1 (-23,-33,-34 / -43,-33,-31)
+ -> add: 125451 (+25, +54 / +45,+51)
+ 
+ 122233221 (hf: 22)
+ -> remove: 1[]33[]1 (-12, -222, -23 / -32, -22, -21)
+ -> add: 142241 (+14,+42/+24,+41)
+ 
+ 
+ */
+
 #include <armadillo>
 #include <iostream>
 #include "shannonEntropy.hpp"
@@ -22,7 +42,7 @@ struct ETC {
             return i128 == other.i128;
         }
     };
-
+    
     static ETC::pair makeETCPair (sword a, sword b) {ETC::pair p; p.i1 = a; p.i2 = b; return p;};
 
 //    typedef unordered_map<__int128, unsigned int> pairFreqTable;
@@ -68,9 +88,10 @@ struct ETC {
         }
         return winner;
     }
+    
 
     static auto substitute(const ivec &seq, ETC::pair p) {
-        int replacementSymbol = max(seq) + 1;
+        sword replacementSymbol = max(seq) + 1;
         ivec newSeq = zeros<ivec>(seq.size());
         uword src=0, dest=0;
         unsigned int replaceCount=0;
@@ -124,7 +145,7 @@ struct ETC {
         while(Hnew >1e-6 && newSeq.size() > 1) {
             ETC::pair hfPair = ETC::findHFPair(newSeq);
             auto [newSeqRepl, replaceCount, replaceSym] = ETC::substitute(newSeq, hfPair);
-            
+//            cout << newSeqRepl << endl;
             //reduce counts of replacement pair
             shannonEntropy::histoMap::iterator it = histo.find(hfPair.i1);
             it->second -= replaceCount;
@@ -152,4 +173,16 @@ struct ETC {
         
         return N;
     }
+    
+    static double calcJoint(const ivec& seq1, const ivec& seq2) {
+        ivec combSeq;
+        combSeq.set_size(seq1.size());
+        for (uword i=0; i < seq1.size(); i++) {
+            combSeq[i] =(sword)( seq1[i] | (seq2[i] << 32));
+            cout << combSeq[i] << ", ";
+        }
+        cout << endl;
+        return ETC::calc(combSeq);
+    }
+
 };

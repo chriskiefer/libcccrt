@@ -71,6 +71,15 @@ TEST(CCCTest, ETCTest) {
     EXPECT_EQ(ETC::calc({1,4,5,3,3,3,5,5,7,5,7,7,7,7,8,2,4,9,2,4,6,7,8,5}),20);
     EXPECT_EQ(ETC::calc({1,4,5,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3}),8);
 }
+TEST(CCCTest, ETCJointTest) {
+    EXPECT_EQ(ETC::calcJoint({1,1,1,2}, {2,3,3,4}),3);
+    EXPECT_EQ(ETC::calcJoint({3,33,333,22,30000,-20000,16,0},{0,333,33,30000,30000,30000,64,-1}),7);
+    EXPECT_EQ(ETC::calcJoint({0,0,0,0,0},{1,1,1,1,1}),0);
+    EXPECT_EQ(ETC::calcJoint({0,1,2,2,4,5,6,7,2,2},{0,1,2,2,4,5,6,7,2,2}),8);
+    EXPECT_EQ(ETC::calcJoint({0}, {100}),0);
+
+
+}
 
 
 int main(int argc, char **argv) {
@@ -79,13 +88,13 @@ int main(int argc, char **argv) {
     int res =  RUN_ALL_TESTS();
     
     //perf testing
-    clock_t t = clock();
-    for(int i=0; i < 50; i++) {
-        ivec x(500);
-        for(int j=0; j<x.size(); j++) x[j] = rand() % 8;
-        cout << ETC::calc(x) << endl;
-    }
-    const double work_time = (clock() - t) / double(CLOCKS_PER_SEC) * 1000;
-    cout << work_time << " ms" << endl;
+//    clock_t t = clock();
+//    for(int i=0; i < 50; i++) {
+//        ivec x(500);
+//        for(int j=0; j<x.size(); j++) x[j] = rand() % 8;
+//        cout << ETC::calc(x) << endl;
+//    }
+//    const double work_time = (clock() - t) / double(CLOCKS_PER_SEC) * 1000;
+//    cout << work_time << " ms" << endl;
     return res;
 }
