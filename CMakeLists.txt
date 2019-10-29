@@ -41,7 +41,7 @@ endif()
 include_directories(armadillo/include)
 add_subdirectory(hopscotch-map)
 
-add_executable(CCC main.cpp shannonEntropy.hpp ETC.hpp)
+add_executable(CCC main.cpp shannonEntropy.hpp ETC.hpp CCC.hpp)
 #target_link_libraries(CCC ${ARMADILLO_LIBRARIES})
 target_link_libraries(CCC gtest_main tsl::hopscotch_map)
 

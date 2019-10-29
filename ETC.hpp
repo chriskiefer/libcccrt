@@ -1,22 +1,4 @@
-// 1232302
-// 142302 -> -23, -12, -32, +14, +42
-// 14402 -> -42, -23, -30, +44, +40
-
-/*
- 
- 122233221 -> hf = 22
- 143341 -> -12, -22(2), -23 / -32. -22, -21 / +14, +43,
- 
- 12334331
- -> remove: 12[]4[]1 (-23,-33,-34 / -43,-33,-31)
- -> add: 125451 (+25, +54 / +45,+51)
- 
- 122233221 (hf: 22)
- -> remove: 1[]33[]1 (-12, -222, -23 / -32, -22, -21)
- -> add: 142241 (+14,+42/+24,+41)
- 
- 
- */
+#pragma once
 
 #include <armadillo>
 #include <iostream>
@@ -53,9 +35,15 @@ struct ETC {
         return {0};
     }
 
-    //can further optimise by incrementally editing the pair frequency table
     static ETC::pair findHFPair(const ivec &seq) {
-
+        /*
+         this implementation works very slightly differently from the matlab original where more that one pair wins the highest frequency
+         - the matlab version depends on arbitrary behaviour of max(x)
+         [m,indx]=max(Count_Array(:));
+         i.e. chooses winner based on first position in 2d frequency matrix
+         whereas this version chooses the first winner in the order of the array, which is slightly faster
+         tests show this occasionally makes very minor differences in the results
+         */
         ETC::pairFreqTable histo;
         ETC::pair winner;
         unsigned int highScore=0;
@@ -137,51 +125,55 @@ struct ETC {
     
     static double calc(const ivec &seq) {
         double N = 0; //ETC measure
-        shannonEntropy::histoMap histo = shannonEntropy::calcDistribution(seq);
-        double Hnew = shannonEntropy::calcProbability(histo, seq);
+//        cout << seq << endl;
+        if (seq.size() > 1) {
+            shannonEntropy::histoMap histo = shannonEntropy::calcDistribution(seq);
+            double Hnew = shannonEntropy::calcProbability(histo, seq);
 
-        ivec newSeq = seq;
-        
-        while(Hnew >1e-6 && newSeq.size() > 1) {
-            ETC::pair hfPair = ETC::findHFPair(newSeq);
-            auto [newSeqRepl, replaceCount, replaceSym] = ETC::substitute(newSeq, hfPair);
-//            cout << newSeqRepl << endl;
-            //reduce counts of replacement pair
-            shannonEntropy::histoMap::iterator it = histo.find(hfPair.i1);
-            it->second -= replaceCount;
-            if (it->second == 0) {
-                //remove from the histo
-                histo.erase(it);
-            }
-            it = histo.find(hfPair.i2);
-            it->second -= replaceCount;
-            if (it->second == 0) {
-                //remove from the histo
-                histo.erase(it);
-            }
-            //add the new symbol into the histogram
-            auto histoEntry = make_pair(replaceSym, replaceCount);
-            histo.insert(histoEntry);
+            ivec newSeq = seq;
             
-            
-            Hnew = shannonEntropy::calcProbability(histo, newSeqRepl);
-            newSeq = newSeqRepl;
-            N++;
-            // cout << newSeq << endl;
-            // cout << N << ", " << Hnew << endl;
+            while(Hnew >1e-6 && newSeq.size() > 1) {
+//                cout << newSeq.size() << endl;
+//                cout << newSeq.t() << endl;
+                ETC::pair hfPair = ETC::findHFPair(newSeq);
+                auto [newSeqRepl, replaceCount, replaceSym] = ETC::substitute(newSeq, hfPair);
+    //            cout << newSeqRepl << endl;
+                //reduce counts of replacement pair
+                shannonEntropy::histoMap::iterator it = histo.find(hfPair.i1);
+                it->second -= replaceCount;
+                if (it->second == 0) {
+                    //remove from the histo
+                    histo.erase(it);
+                }
+                it = histo.find(hfPair.i2);
+                it->second -= replaceCount;
+                if (it->second == 0) {
+                    //remove from the histo
+                    histo.erase(it);
+                }
+                //add the new symbol into the histogram
+                auto histoEntry = make_pair(replaceSym, replaceCount);
+                histo.insert(histoEntry);
+                
+                
+                Hnew = shannonEntropy::calcProbability(histo, newSeqRepl);
+                newSeq = newSeqRepl;
+                N++;
+                // cout << newSeq << endl;
+                // cout << N << ", " << Hnew << endl;
+            }
+            N /= (seq.size() -1);
         }
-        
         return N;
     }
     
     static double calcJoint(const ivec& seq1, const ivec& seq2) {
+        
         ivec combSeq;
         combSeq.set_size(seq1.size());
         for (uword i=0; i < seq1.size(); i++) {
             combSeq[i] =(sword)( seq1[i] | (seq2[i] << 32));
-            cout << combSeq[i] << ", ";
         }
-        cout << endl;
         return ETC::calc(combSeq);
     }
 
