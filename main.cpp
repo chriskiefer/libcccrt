@@ -101,6 +101,9 @@ TEST(CCCTest, DCTest) {
 
 }
 
+TEST(CCCTest, DCJointTest) {
+    EXPECT_FLOAT_EQ(CCC::dynamicCCJoint({1,2,3,4,1,2,3,4,1,2,3,4}, {1,5,3,7,1,1,3,7,1,2,4,7}, 3, 3, 1), -0.04);
+}
 
 int main(int argc, char **argv) {
     cout << "CCC library tests\n";
@@ -122,6 +125,13 @@ int main(int argc, char **argv) {
 //    int offset=9, dx=2, past=3;
 //    cout << test.subvec(offset-dx-past+1,offset) << endl;
 //    cout << test.subvec(offset-dx-past+1,offset-dx) << endl;
+//    ivec test = {1,2,3,4,5,6,7,8,9};
+//    ivec test2 = {10,11,12,13,14,15};
+//    ivec comb = test.subvec(0,6);
+//    comb(span(4,5)) = test2(span(4,5));
+//    cout << test.t() << endl;
+//    cout << test2.t() << endl;
+//    cout << comb.t() << endl;
     return res;
 }
 
