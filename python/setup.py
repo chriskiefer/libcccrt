@@ -8,10 +8,10 @@ cccrt = Extension(
     sources=['CCCpy.cpp'],
     libraries=['boost_python37-mt','boost_numpy37-mt'],
     extra_compile_args=['-std=c++17'],
-    include_dirs=['..'],
+    include_dirs=['..','../hopscotch-map/include'],
 )
 
 setup(
     name='cccrt',
-    version='0.3',
+    version='0.4',
     ext_modules=[cccrt])

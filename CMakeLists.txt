@@ -1,6 +1,6 @@
 cmake_minimum_required (VERSION 3.15)
 
-project (CCC)
+project (cccrt)
 
 # Download and unpack googletest at configure time
 configure_file(CMakeLists.txt.in googletest-download/CMakeLists.txt)
@@ -41,14 +41,14 @@ endif()
 include_directories(armadillo/include)
 add_subdirectory(hopscotch-map)
 
-add_executable(CCC main.cpp shannonEntropy.hpp ETC.hpp CCC.hpp)
-#target_link_libraries(CCC ${ARMADILLO_LIBRARIES})
-target_link_libraries(CCC gtest_main tsl::hopscotch_map)
+add_executable(cccrt main.cpp shannonEntropy.hpp ETC.hpp CCC.hpp)
+#target_link_libraries(cccrt ${ARMADILLO_LIBRARIES})
+target_link_libraries(cccrt gtest_main tsl::hopscotch_map)
 
 
 #add_test(NAME example_test COMMAND example)
 
-set_property(TARGET CCC PROPERTY CXX_STANDARD 17)
+set_property(TARGET cccrt PROPERTY CXX_STANDARD 17)
 
 add_custom_target(test COMMAND echo "test")
 
