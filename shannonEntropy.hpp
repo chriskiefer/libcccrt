@@ -9,15 +9,15 @@ using namespace arma;
 
 struct shannonEntropy {
     
-    typedef unordered_map<int, unsigned int> histoMap;
-    typedef unordered_map<int, double> probMap;
+    typedef unordered_map<sword, unsigned int> histoMap;
+//    typedef unordered_map<int, double> probMap;
 
     static shannonEntropy::histoMap calcDistribution(const ivec &seq) {
         shannonEntropy::histoMap histo;
-        for (auto v: seq) {
+        for (const sword &v: seq) {
             shannonEntropy::histoMap::iterator it = histo.find(v);
             if (it == histo.end()) {
-                histo.insert(std::make_pair<int, unsigned int>(v, 1));
+                histo.insert(std::make_pair(v, 1));
             }else{
                 it->second = it->second + 1;
             }
