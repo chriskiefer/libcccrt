@@ -48,8 +48,10 @@ double dynamicCCJoint(np::ndarray const & ar, np::ndarray const & ar2, size_t dx
 double CCCausality(np::ndarray const & ar, np::ndarray const & ar2, size_t dx, size_t past, size_t step) {
   int64_t* input_ptr = reinterpret_cast<int64_t*>(ar.get_data());
   ivec inputVec(input_ptr, ar.shape(0), 1, 1);
+
   int64_t* input_ptr2 = reinterpret_cast<int64_t*>(ar2.get_data());
-  ivec inputVec2(input_ptr2, ar.shape(0), 1, 1);
+  ivec inputVec2(input_ptr2, ar2.shape(0), 1, 1);
+
   return CCC::CCCausality(inputVec, inputVec2, dx, past, step);
 }
 
@@ -62,5 +64,4 @@ BOOST_PYTHON_MODULE(cccrt)
     def("dynamicCC", dynamicCC);
     def("dynamicCCJoint", dynamicCCJoint);
     def("CCCausality", CCCausality);
-    // def("nptest", nptest);
 }

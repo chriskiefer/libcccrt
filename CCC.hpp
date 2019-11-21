@@ -8,13 +8,14 @@
 
 
 struct CCC {
-    
+
     //DC(dx|xpast) = ETC(xpast + dx) - ETC(xpast)
     //equation 5 in the paper
-    static double dynamicCC(const ivec &seq, size_t dx, size_t xpast, size_t step) {
+    static std::tuple<double, bool> dynamicCC(const ivec &seq, size_t dx, size_t xpast, size_t step) {
         size_t len = seq.size() -dx - xpast;
         int k=1;
-        double val=0;
+//        double val=0;
+        double valCall=0, valCpast=0;
 //        cout << "----------\n" << seq.t() << endl;
         for(size_t i=0; i < len; i += step) {
             auto CallThread = std::async(std::launch::async, [&seq, dx, xpast, i]() {
@@ -32,13 +33,16 @@ struct CCC {
 //            for(int q=i; q < i+xpast; q++) cout << seq[q] << ",";
 //            cout << endl;
 //            cout << "dynCC: " << Call << ", " << Cpast << ", " << (Call - Cpast) <<endl;
-            val += Call - Cpast;
+//            val += Call - Cpast;
+            valCall += Call;
+            valCpast += Cpast;
             k++;
         }
+        double val = valCall - valCpast;
         val = val / (k-1);
-        return val;
+        return std::make_tuple(val, valCall > valCpast);
     }
-    
+
     //equation 6 in the paper
     static double dynamicCCJoint(const ivec &X, const ivec &Y, size_t dx, size_t past, size_t step) {
         size_t len = X.size() -dx - past;
@@ -70,7 +74,7 @@ struct CCC {
         return val;
 
     }
-    
+
     //equation 8 in the paper
     static double CCCausality(const ivec &effectSeq, const ivec &causeSeq, size_t dx, size_t past, size_t step) {
         auto dynCCSeq1Thread = std::async(std::launch::async, [&effectSeq, past, dx, step]() {
@@ -80,9 +84,10 @@ struct CCC {
         auto dynCCSeqJointThread = std::async(std::launch::async, [&effectSeq, &causeSeq, past, dx, step]() {
             return CCC::dynamicCCJoint(effectSeq, causeSeq, dx, past, step);
         });
-        double dynCC = dynCCSeq1Thread.get();
+        auto dynCCResult = dynCCSeq1Thread.get();
+        double dynCC = get<0>(dynCCResult);
         double dynCCJoint = dynCCSeqJointThread.get();
-        
+
 //        cout << "CCC: " << dynCC << ", " << dynCCJoint << endl;
 
         return dynCC - dynCCJoint;
