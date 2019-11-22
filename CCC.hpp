@@ -8,39 +8,50 @@
 
 
 struct CCC {
+    
+    enum threading {MULTITHREAD, SINGLETHREAD};
 
     //DC(dx|xpast) = ETC(xpast + dx) - ETC(xpast)
     //equation 5 in the paper
-    static std::tuple<double, bool> dynamicCC(const ivec &seq, size_t dx, size_t xpast, size_t step) {
+    static std::tuple<double, bool> dynamicCC(const ivec &seq, size_t dx, size_t xpast, size_t step, threading threadType=CCC::MULTITHREAD) {
         size_t len = seq.size() -dx - xpast;
-        int k=1;
-//        double val=0;
-        double valCall=0, valCpast=0;
-//        cout << "----------\n" << seq.t() << endl;
-        for(size_t i=0; i < len; i += step) {
-            auto CallThread = std::async(std::launch::async, [&seq, dx, xpast, i]() {
+        auto calcCall = [&seq, dx, xpast, step, len]()  {
+            double valCall=0;
+            for(size_t i=0; i < len; i += step) {
                 auto window = seq.subvec(i, i+ xpast + dx - 1);
-//                cout << "all: \n" << window.t() << endl;
-                return ETC::calc(window);
-            });
-            auto CpastThread = std::async(std::launch::async, [&seq, xpast, i]() {
+                //                cout << "all: \n" << window.t() << endl;
+                valCall += ETC::calc(window);
+            }
+            return valCall;
+        };
+        auto calcCpast = [&seq, xpast, step, len]() {
+            double valCpast=0;
+            for(size_t i=0; i < len; i += step) {
                 auto window = seq.subvec(i, i+xpast-1);
-//                cout << "past: \n" << window.t() << endl;
-                return ETC::calc(window);
+                //                cout << "past: \n" << window.t() << endl;
+                valCpast += ETC::calc(window);
+            }
+            return valCpast;
+        };
+        double Call=0;
+        double Cpast=0;
+        if (threadType == CCC::MULTITHREAD) {
+            auto CallThread = std::async(std::launch::async, [&calcCall]() {
+                return calcCall();
             });
-            double Call = CallThread.get();
-            double Cpast = CpastThread.get();
-//            for(int q=i; q < i+xpast; q++) cout << seq[q] << ",";
-//            cout << endl;
-//            cout << "dynCC: " << Call << ", " << Cpast << ", " << (Call - Cpast) <<endl;
-//            val += Call - Cpast;
-            valCall += Call;
-            valCpast += Cpast;
-            k++;
+            auto CpastThread = std::async(std::launch::async, [&calcCpast]() {
+                return calcCpast();
+            });
+            Call = CallThread.get();
+            Cpast = CpastThread.get();
+        }else{
+            Call = calcCall();
+            Cpast = calcCpast();
         }
-        double val = valCall - valCpast;
-        val = val / (k-1);
-        return std::make_tuple(val, valCall > valCpast);
+        int k = ceil(len/(double)step);
+        double val = Call - Cpast;
+        val = val / k;
+        return std::make_tuple(val, Call > Cpast);
     }
 
     //equation 6 in the paper
