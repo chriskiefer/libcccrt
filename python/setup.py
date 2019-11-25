@@ -13,5 +13,5 @@ cccrt = Extension(
 
 setup(
     name='cccrt',
-    version='0.51',
+    version='0.60',
     ext_modules=[cccrt])

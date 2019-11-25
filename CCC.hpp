@@ -13,7 +13,7 @@ struct CCC {
 
     //DC(dx|xpast) = ETC(xpast + dx) - ETC(xpast)
     //equation 5 in the paper
-    static std::tuple<double, bool> dynamicCC(const ivec &seq, size_t dx, size_t xpast, size_t step, threading threadType=CCC::MULTITHREAD) {
+    static double dynamicCC(const ivec &seq, size_t dx, size_t xpast, size_t step, threading threadType=CCC::MULTITHREAD) {
         size_t len = seq.size() -dx - xpast;
         auto calcCall = [&seq, dx, xpast, step, len]()  {
             double valCall=0;
@@ -51,7 +51,7 @@ struct CCC {
         int k = ceil(len/(double)step);
         double val = Call - Cpast;
         val = val / k;
-        return std::make_tuple(val, Call > Cpast);
+        return val;
     }
 
     //equation 6 in the paper
@@ -87,7 +87,7 @@ struct CCC {
     }
 
     //equation 8 in the paper
-    static double CCCausality(const ivec &effectSeq, const ivec &causeSeq, size_t dx, size_t past, size_t step) {
+    static std::tuple<double, unsigned int> CCCausality(const ivec &effectSeq, const ivec &causeSeq, size_t dx, size_t past, size_t step) {
         auto dynCCSeq1Thread = std::async(std::launch::async, [&effectSeq, past, dx, step]() {
             return CCC::dynamicCC(effectSeq, dx, past, step);
         });
@@ -96,11 +96,35 @@ struct CCC {
             return CCC::dynamicCCJoint(effectSeq, causeSeq, dx, past, step);
         });
         auto dynCCResult = dynCCSeq1Thread.get();
-        double dynCC = get<0>(dynCCResult);
+        double dynCC = dynCCResult;
         double dynCCJoint = dynCCSeqJointThread.get();
-
+        double CCC = dynCC - dynCCJoint;
 //        cout << "CCC: " << dynCC << ", " << dynCCJoint << endl;
+        //CCC mode - see table S1, related to polarity of the terms, and relative magnitude
+        unsigned int CCCMode;
+        if (dynCC < 0) {
+            if (dynCCJoint < 0) {
+                if (CCC < 0) {
+                    CCCMode = 0;
+                }else{
+                    CCCMode = 1;
+                }
+                
+            }else{
+                CCCMode = 2;
+            }
+        }else{
+            if (dynCCJoint < 0) {
+                CCCMode = 3;
+            }else{
+                if (CCC < 0) {
+                    CCCMode = 4;
+                }else{
+                    CCCMode = 5;
+                }
+            }
+        }
 
-        return dynCC - dynCCJoint;
+        return std::make_tuple(CCC, CCCMode);;
     }
 };
