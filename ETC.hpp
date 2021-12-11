@@ -3,7 +3,6 @@
 #include <armadillo>
 #include <iostream>
 #include "shannonEntropy.hpp"
-#include <tsl/hopscotch_map.h>
 
 using namespace std;
 using namespace arma;
@@ -58,7 +57,6 @@ struct ETC {
                 score=1;
             }else{
                 score = it->second + 1;
-                // it.value() = score;
                it->second = score;
             }
             if (score > highScore) {

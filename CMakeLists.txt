@@ -39,15 +39,18 @@ endif()
 #include_directories(${ARMADILLO_INCLUDE_DIRS})
 
 include_directories(armadillo/include)
-add_subdirectory(hopscotch-map)
 
 add_executable(cccrt main.cpp shannonEntropy.hpp ETC.hpp CCC.hpp)
 #target_link_libraries(cccrt ${ARMADILLO_LIBRARIES})
-target_link_libraries(cccrt gtest_main tsl::hopscotch_map)
+target_link_libraries(cccrt gtest_main)
 
 
+#add_test(NAME example_test COMMAND example)
 
 set_property(TARGET cccrt PROPERTY CXX_STANDARD 17)
 
 add_custom_target(test COMMAND echo "test")
 
+#project (CCCPython)
+#add_library(CCCPython CCCpy.cpp shannonEntropy.hpp ETC.hpp)
+#target_link_libraries(CCCPython ${ARMADILLO_LIBRARIES})
