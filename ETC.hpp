@@ -27,8 +27,8 @@ struct ETC {
     
     static ETC::pair makeETCPair (sword a, sword b) {ETC::pair p; p.i1 = a; p.i2 = b; return p;};
 
-//    typedef unordered_map<__int128, unsigned int> pairFreqTable;
-    typedef tsl::hopscotch_pg_map<__int128, unsigned int> pairFreqTable;
+   typedef unordered_map<__int128, unsigned int> pairFreqTable;
+    // typedef tsl::hopscotch_pg_map<__int128, unsigned int> pairFreqTable;
 
     static ivec symbolise(const vec &seq, const unsigned int bins)
     {
@@ -58,8 +58,8 @@ struct ETC {
                 score=1;
             }else{
                 score = it->second + 1;
-                it.value() = score;
-//                it->second = score;
+                // it.value() = score;
+               it->second = score;
             }
             if (score > highScore) {
                 highScore = score;

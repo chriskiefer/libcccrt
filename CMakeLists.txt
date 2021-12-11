@@ -46,12 +46,8 @@ add_executable(cccrt main.cpp shannonEntropy.hpp ETC.hpp CCC.hpp)
 target_link_libraries(cccrt gtest_main tsl::hopscotch_map)
 
 
-#add_test(NAME example_test COMMAND example)
 
 set_property(TARGET cccrt PROPERTY CXX_STANDARD 17)
 
 add_custom_target(test COMMAND echo "test")
 
-#project (CCCPython)
-#add_library(CCCPython CCCpy.cpp shannonEntropy.hpp ETC.hpp)
-#target_link_libraries(CCCPython ${ARMADILLO_LIBRARIES})
