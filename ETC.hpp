@@ -7,14 +7,14 @@
 using namespace std;
 using namespace arma;
 
-static_assert(sizeof(sword) ==8); //findHFPair works on the assumption that arma::sword is 64 bit
+// static_assert(sizeof(sword) ==8); //findHFPair works on the assumption that arma::sword is 64 bit
 
 struct ETC {
 
     union pair {
         struct {
-            sword i1;
-            sword i2;
+            uint64_t i1;
+            uint64_t i2;
         } __attribute__((packed));
         __int128 i128;
 
@@ -24,10 +24,9 @@ struct ETC {
         }
     };
     
-    static ETC::pair makeETCPair (sword a, sword b) {ETC::pair p; p.i1 = a; p.i2 = b; return p;};
+    static ETC::pair makeETCPair (uint64_t a, uint64_t b) {ETC::pair p; p.i1 = a; p.i2 = b; return p;};
 
    typedef unordered_map<__int128, unsigned int> pairFreqTable;
-    // typedef tsl::hopscotch_pg_map<__int128, unsigned int> pairFreqTable;
 
     static ivec symbolise(const vec &seq, const unsigned int bins)
     {
@@ -77,7 +76,7 @@ struct ETC {
     
 
     static auto substitute(const ivec &seq, ETC::pair p) {
-        sword replacementSymbol = max(seq) + 1;
+        uint64_t replacementSymbol = max(seq) + 1;
         ivec newSeq = zeros<ivec>(seq.size());
         uword src=0, dest=0;
         unsigned int replaceCount=0;
@@ -170,7 +169,7 @@ struct ETC {
         ivec combSeq;
         combSeq.set_size(seq1.size());
         for (uword i=0; i < seq1.size(); i++) {
-            combSeq[i] =(sword)( seq1[i] | (seq2[i] << 32));
+            combSeq[i] =(uint64_t)( seq1[i] | (seq2[i] << 32));
         }
         return ETC::calc(combSeq);
     }
