@@ -55,6 +55,7 @@ target_link_libraries(cccrt gtest_main)
 #add_test(NAME example_test COMMAND example)
 
 set_property(TARGET cccrt PROPERTY CXX_STANDARD 17)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3")
 
 add_custom_target(test COMMAND echo "test")
 
