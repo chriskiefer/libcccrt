@@ -41,7 +41,7 @@ endif()
 #find_package(Armadillo REQUIRED)
 #include_directories(${ARMADILLO_INCLUDE_DIRS})
 
-include_directories(armadillo/include)
+include_directories(armadillo/include eigen)
 
 # target_include_directories(
 #   "${eigen_SOURCE_DIR}"

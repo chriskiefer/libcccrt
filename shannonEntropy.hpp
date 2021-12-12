@@ -4,17 +4,21 @@
 #include <iostream>
 #include <unordered_map>
 #include <cmath>
+#include <Eigen/Dense>
+// using Eigen::ArrayXi;
 using namespace std;
-using namespace arma;
+// using namespace arma;
+using ArrayXL = Eigen::Array<int64_t, Eigen::Dynamic, 1>; 
+
 
 struct shannonEntropy {
     
-    typedef unordered_map<sword, unsigned int> histoMap;
+    typedef unordered_map<uint64_t, size_t> histoMap;
 //    typedef unordered_map<int, double> probMap;
 
-    static shannonEntropy::histoMap calcDistribution(const ivec &seq) {
+    static shannonEntropy::histoMap calcDistribution(const ArrayXL &seq) {
         shannonEntropy::histoMap histo;
-        for (const sword &v: seq) {
+        for (const uint64_t &v: seq) {
             shannonEntropy::histoMap::iterator it = histo.find(v);
             if (it == histo.end()) {
                 histo.insert(std::make_pair(v, 1));
@@ -25,7 +29,7 @@ struct shannonEntropy {
         return histo;
     }
     
-    static double calcProbability(const shannonEntropy::histoMap &histo, const ivec &seq) {
+    static double calcProbability(const shannonEntropy::histoMap &histo, const ArrayXL &seq) {
         double scale = 1.0 / seq.size();
         double H=0;
         for(auto v: histo) {
@@ -35,7 +39,7 @@ struct shannonEntropy {
         return H;
     }
     
-    static double calc(const ivec &seq) {
+    static double calc(const ArrayXL &seq) {
         shannonEntropy::histoMap histo = shannonEntropy::calcDistribution(seq);
 //        for(auto v: histo) {
 //            cout << v.first << ": " << v.second << endl;

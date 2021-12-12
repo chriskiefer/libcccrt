@@ -3,9 +3,14 @@
 #include <armadillo>
 #include <iostream>
 #include "shannonEntropy.hpp"
+#include <Eigen/Dense>
+ 
+// using Eigen::ArrayXi;
+
+using ArrayXL = Eigen::Array<int64_t, Eigen::Dynamic, 1>; 
 
 using namespace std;
-using namespace arma;
+// using namespace arma;
 
 // static_assert(sizeof(sword) ==8); //findHFPair works on the assumption that arma::sword is 64 bit
 
@@ -24,16 +29,12 @@ struct ETC {
         }
     };
     
-    static ETC::pair makeETCPair (uint64_t a, uint64_t b) {ETC::pair p; p.i1 = a; p.i2 = b; return p;};
+   static ETC::pair makeETCPair (uint64_t a, uint64_t b) {ETC::pair p; p.i1 = a; p.i2 = b; return p;};
 
    typedef unordered_map<__int128, unsigned int> pairFreqTable;
 
-    static ivec symbolise(const vec &seq, const unsigned int bins)
-    {
-        return {0};
-    }
 
-    static ETC::pair findHFPair(const ivec &seq) {
+    static ETC::pair findHFPair(const ArrayXL &seq) {
         /*
          this implementation works very slightly differently from the matlab original where more that one pair wins the highest frequency
          - the matlab version depends on arbitrary behaviour of max(x)
@@ -63,7 +64,7 @@ struct ETC {
                 winner = currPair;
             }
             if (currPair.i1 == currPair.i2) {
-                if (seqPos < seq.size()-1) {
+                if (seqPos < seq.size()-2) {
                     if (seq[seqPos+2] == seq[seqPos]) {
                         seqPos++;
                     }
@@ -75,11 +76,11 @@ struct ETC {
     }
     
 
-    static auto substitute(const ivec &seq, ETC::pair p) {
-        uint64_t replacementSymbol = max(seq) + 1;
-        ivec newSeq = zeros<ivec>(seq.size());
-        uword src=0, dest=0;
-        unsigned int replaceCount=0;
+    static auto substitute(const ArrayXL &seq, ETC::pair p) {
+        int64_t replacementSymbol = seq.maxCoeff() + 1;
+        ArrayXL newSeq(seq.size());
+        size_t src=0, dest=0;
+        size_t replaceCount=0;
         while(src < seq.size()) {
             if (src < seq.size()-1) {
                 if (seq[src] == p.i1 && seq[src+1] == p.i2) {
@@ -95,39 +96,37 @@ struct ETC {
             src++;
             dest++;
         }
-        // cout << dest << endl;
-        newSeq = newSeq.rows(0,dest-1);
-//        cout << newSeq << endl;
-        return std::make_tuple(newSeq, replaceCount, replacementSymbol);
+        ArrayXL finalSeq = newSeq.head(dest);
+        return std::make_tuple(finalSeq, replaceCount, replacementSymbol);
     }
 
-    static double calcOld(const ivec &seq) {
-        double N = 0; //ETC measure
-        double Hnew = shannonEntropy::calc(seq);
-        ivec newSeq = seq;
+    // static double calcOld(const ivec &seq) {
+    //     double N = 0; //ETC measure
+    //     double Hnew = shannonEntropy::calc(seq);
+    //     ivec newSeq = seq;
         
-        //todo: this can be optimised by continually editing the shannon histo instead of redoing it every time
-        while(Hnew >1e-6 && newSeq.size() > 1) {
-            ETC::pair hfPair = ETC::findHFPair(newSeq);
-            auto [newSeqRepl, replaceCount, replaceSym] = ETC::substitute(newSeq, hfPair);
-            Hnew = shannonEntropy::calc(newSeqRepl);
-            newSeq = newSeqRepl;
-            N++;
-            // cout << newSeq << endl;
-            // cout << N << ", " << Hnew << endl;
-        }
+    //     //todo: this can be optimised by continually editing the shannon histo instead of redoing it every time
+    //     while(Hnew >1e-6 && newSeq.size() > 1) {
+    //         ETC::pair hfPair = ETC::findHFPair(newSeq);
+    //         auto [newSeqRepl, replaceCount, replaceSym] = ETC::substitute(newSeq, hfPair);
+    //         Hnew = shannonEntropy::calc(newSeqRepl);
+    //         newSeq = newSeqRepl;
+    //         N++;
+    //         // cout << newSeq << endl;
+    //         // cout << N << ", " << Hnew << endl;
+    //     }
         
-        return N;
-    }
+    //     return N;
+    // }
     
-    static double calc(const ivec &seq) {
+    static double calc(const ArrayXL &seq) {
         double N = 0; //ETC measure
 //        cout << seq << endl;
         if (seq.size() > 1) {
             shannonEntropy::histoMap histo = shannonEntropy::calcDistribution(seq);
             double Hnew = shannonEntropy::calcProbability(histo, seq);
 
-            ivec newSeq = seq;
+            ArrayXL newSeq = seq;
             
             while(Hnew >1e-6 && newSeq.size() > 1) {
                 ETC::pair hfPair = ETC::findHFPair(newSeq);
@@ -159,11 +158,10 @@ struct ETC {
         return N;
     }
     
-    static double calcJoint(const ivec& seq1, const ivec& seq2) {
+    static double calcJoint(const ArrayXL& seq1, const ArrayXL& seq2) {
         
-        ivec combSeq;
-        combSeq.set_size(seq1.size());
-        for (uword i=0; i < seq1.size(); i++) {
+        ArrayXL combSeq(seq1.size());
+        for (size_t i=0; i < seq1.size(); i++) {
             combSeq[i] =(uint64_t)( seq1[i] | (seq2[i] << 32));
         }
         return ETC::calc(combSeq);
