@@ -130,11 +130,8 @@ struct ETC {
             ivec newSeq = seq;
             
             while(Hnew >1e-6 && newSeq.size() > 1) {
-//                cout << newSeq.size() << endl;
-//                cout << newSeq.t() << endl;
                 ETC::pair hfPair = ETC::findHFPair(newSeq);
                 auto [newSeqRepl, replaceCount, replaceSym] = ETC::substitute(newSeq, hfPair);
-    //            cout << newSeqRepl << endl;
                 //reduce counts of replacement pair
                 shannonEntropy::histoMap::iterator it = histo.find(hfPair.i1);
                 it->second -= replaceCount;
@@ -156,8 +153,6 @@ struct ETC {
                 Hnew = shannonEntropy::calcProbability(histo, newSeqRepl);
                 newSeq = newSeqRepl;
                 N++;
-                // cout << newSeq << endl;
-                // cout << N << ", " << Hnew << endl;
             }
             N /= (seq.size() -1);
         }

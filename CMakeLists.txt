@@ -2,6 +2,9 @@ cmake_minimum_required (VERSION 3.15)
 
 project (cccrt)
 
+
+
+
 # Download and unpack googletest at configure time
 configure_file(CMakeLists.txt.in googletest-download/CMakeLists.txt)
 execute_process(COMMAND ${CMAKE_COMMAND} -G "${CMAKE_GENERATOR}" .
@@ -39,6 +42,10 @@ endif()
 #include_directories(${ARMADILLO_INCLUDE_DIRS})
 
 include_directories(armadillo/include)
+
+# target_include_directories(
+#   "${eigen_SOURCE_DIR}"
+# )
 
 add_executable(cccrt main.cpp shannonEntropy.hpp ETC.hpp CCC.hpp)
 #target_link_libraries(cccrt ${ARMADILLO_LIBRARIES})
