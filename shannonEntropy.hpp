@@ -13,7 +13,7 @@ using ArrayXL = Eigen::Array<int64_t, Eigen::Dynamic, 1>;
 
 struct shannonEntropy {
     
-    typedef unordered_map<uint64_t, size_t> histoMap;
+    typedef unordered_map<int64_t, size_t> histoMap;
 //    typedef unordered_map<int, double> probMap;
 
     static shannonEntropy::histoMap calcDistribution(const ArrayXL &seq) {
