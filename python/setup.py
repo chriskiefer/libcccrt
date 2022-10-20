@@ -23,7 +23,7 @@ cccrt = Pybind11Extension  (
 
 setup(
     name='cccrt',
-    version='0.70',
+    version='0.80',
     ext_modules=[cccrt])
 
 

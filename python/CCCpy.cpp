@@ -9,6 +9,7 @@
 #include <stdio.h>
 #include "ETC.hpp"
 #include "CCC.hpp"
+#include "LZ.hpp"
 
 
 #include <pybind11/pybind11.h>
@@ -78,7 +79,13 @@ std::tuple<double, unsigned int> CCCausality(Eigen::Ref<ArrayXL>  effectSeq, Eig
   return CCC::CCCausality(effectSeq, causeSeq, dx, past, step);
 }
 
+long LZ(Eigen::Ref<ArrayXL> v) {
+  return LZ::calc(v);
+}
 
+double NLZ(Eigen::Ref<ArrayXL> v) {
+  return LZ::calcNorm(v);
+}
 
 PYBIND11_MODULE(cccrt, m) {
     m.doc() = "Libcccrt"; // optional module docstring
@@ -88,15 +95,6 @@ PYBIND11_MODULE(cccrt, m) {
     m.def("dynamicCC", &dynamicCC, "Calculates dynamical complexity on an array of symbols");
     m.def("dynamicCCJoint", &dynamicCCJoint, "Calculates joint dynamical complexity on an two arrays of symbols");
     m.def("CCCausality", &CCCausality, "Calculates joint compression-complexity causality on an two arrays of symbols");
+    m.def("LZ", &LZ, "Calculates lempel-ziv complexity on an array of symbols");
+    m.def("NLZ", &NLZ, "Calculates normalised lempel-ziv complexity on an array of symbols");
 }
-
-// BOOST_PYTHON_MODULE(cccrt)
-// {
-//     np::initialize();
-
-//     def("greet", greet);
-//     def("ETC", ETC);
-//     def("dynamicCC", dynamicCC);
-//     def("dynamicCCJoint", dynamicCCJoint);
-//     def("CCCausality", CCCausality);
-// }

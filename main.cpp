@@ -5,6 +5,7 @@
 #include "ETC.hpp"
 #include <thread>
 #include "CCC.hpp"
+#include "LZ.hpp"
 #include <Eigen/Dense>
  
 using Eigen::ArrayXi;
@@ -165,6 +166,13 @@ TEST(CCCTest, CCCausalityMassTest) {
     }
 }
 
+TEST(CCCTest, LZTest) {
+    EXPECT_EQ(LZ::calc(ei({0,1})), 2);
+    EXPECT_EQ(LZ::calc(ei({0,1,3,3})), 3);
+    EXPECT_EQ(LZ::calc(ei({1,2,3,3,3,2,3,1})), 5);
+    EXPECT_EQ(LZ::calc(ei({100,9,8,101,102,2,3,4,9,100,103,104,101,105,8,9,106,2,3,4,9,8,6,105,3,100})), 19);
+}
+
 int main(int argc, char **argv) {
     cout << "CCC library tests\n";
     // VectorXi test {0};
@@ -172,6 +180,20 @@ int main(int argc, char **argv) {
     int res =  RUN_ALL_TESTS();
     unsigned int n = std::thread::hardware_concurrency();
     std::cout << n << " concurrent threads are supported.\n";
+
+
+    // auto tmp = ei({7,8,9});
+    // cout << tmp << endl;
+    // cout << "---" << endl;
+    // cout << tmp.segment(0,1) << endl;
+    // cout << "---" << endl;
+    // cout << tmp.segment(1,1) << endl;
+    // cout << "---" << endl;
+    // cout << tmp.segment(0,2) << endl;
+    // cout << "---" << endl;
+    // cout << tmp.segment(0,3) << endl;
+    // cout << "---" << endl;
+    // cout << tmp.segment(1,2) << endl;
     //perf testing
 //    clock_t t = clock();
 //    for(int i=0; i < 86; i++) {
