@@ -58,29 +58,36 @@ struct CCC {
     }
 
     //equation 6 in the paper
-    static double dynamicCCJoint(const ArrayXL &X, const ArrayXL &Y, size_t dx, size_t past, size_t step) {
+    static double dynamicCCJoint(const ArrayXL &X, const ArrayXL &Y, size_t dx, size_t past, size_t step, threading threadType=CCC::MULTITHREAD) {
         size_t len = X.size() -dx - past;
         int k=1;
         double val=0;
         for(size_t i=0; i < len; i += step) {
-            auto CallThread = std::async(std::launch::async, [&X, &Y, dx, past, i]() {
-                ArrayXL window1 = X(Eigen::seq(i, i+ past + dx - 1));
-                ArrayXL window2 = X(Eigen::seq(i, i+ past + dx - 1));
-                window2(Eigen::seq(0,past-1)) = Y(Eigen::seq(i,i+past-1));
-//                auto window = seq1.subvec(i, i+ past + dx - 1);
-//                cout << "all: \n" << window.t() << endl;
-                return ETC::calcJoint(window1, window2);
-            });
-            auto CpastThread = std::async(std::launch::async, [&X, &Y, past, i]() {
-                ArrayXL window1 = X(Eigen::seq(i, i+past-1));
-                ArrayXL window2 = Y(Eigen::seq(i, i+past-1));
-//                cout << "past: \n" << window.t() << endl;
-                return ETC::calcJoint(window1, window2);
-            });
-            double Call = CallThread.get();
-            double Cpast = CpastThread.get();
-//            cout << Call << "," << Cpast << endl;
-//            cout << "intCC: " << Call << ", " << Cpast << ", " << (Call - Cpast) <<endl;
+            double Call, Cpast;
+            //TODO: refactor repeated code using lamdas from multithread
+            if (threadType==CCC::MULTITHREAD) {
+                auto CallThread = std::async(std::launch::async, [&X, &Y, dx, past, i]() {
+                    ArrayXL window1 = X(Eigen::seq(i, i+ past + dx - 1));
+                    ArrayXL window2 = X(Eigen::seq(i, i+ past + dx - 1));
+                    window2(Eigen::seq(0,past-1)) = Y(Eigen::seq(i,i+past-1));
+                    return ETC::calcJoint(window1, window2);
+                });
+                auto CpastThread = std::async(std::launch::async, [&X, &Y, past, i]() {
+                    ArrayXL window1 = X(Eigen::seq(i, i+past-1));
+                    ArrayXL window2 = Y(Eigen::seq(i, i+past-1));
+                    return ETC::calcJoint(window1, window2);
+                });
+                Call = CallThread.get();
+                Cpast = CpastThread.get();
+            }else{
+                ArrayXL window1All= X(Eigen::seq(i, i+ past + dx - 1));
+                ArrayXL window2All = X(Eigen::seq(i, i+ past + dx - 1));
+                window2All(Eigen::seq(0,past-1)) = Y(Eigen::seq(i,i+past-1));
+                Call = ETC::calcJoint(window1All, window2All);
+                ArrayXL window1Past = X(Eigen::seq(i, i+past-1));
+                ArrayXL window2Past = Y(Eigen::seq(i, i+past-1));
+                Cpast = ETC::calcJoint(window1Past, window2Past);
+            }
             val += Call - Cpast;
             k++;
         }

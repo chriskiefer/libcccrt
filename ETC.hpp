@@ -5,14 +5,10 @@
 #include "shannonEntropy.hpp"
 #include <Eigen/Dense>
  
-// using Eigen::ArrayXi;
 
 using ArrayXL = Eigen::Array<int64_t, Eigen::Dynamic, 1>; 
 
 using namespace std;
-// using namespace arma;
-
-// static_assert(sizeof(sword) ==8); //findHFPair works on the assumption that arma::sword is 64 bit
 
 struct ETC {
 
@@ -31,7 +27,7 @@ struct ETC {
     
    static ETC::pair makeETCPair (uint64_t a, uint64_t b) {ETC::pair p; p.i1 = a; p.i2 = b; return p;};
 
-   typedef unordered_map<__int128, unsigned int> pairFreqTable;
+   typedef map<__int128, unsigned int> pairFreqTable;
 
 
     static ETC::pair findHFPair(const ArrayXL &seq) {
