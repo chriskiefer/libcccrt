@@ -18,12 +18,12 @@ cccrt = Pybind11Extension  (
     sources=['CCCpy.cpp'],
     depends=['CCC.hpp'],
     extra_compile_args=['-std=c++17', '-O3', '-DPYTHON_BUILD'],
-    include_dirs=['..','../eigen'],
+    include_dirs=['..','../eigen-3.4.0', '../EigenRand'],
 )
 
 setup(
     name='cccrt',
-    version='0.80',
+    version='0.9.1',
     ext_modules=[cccrt])
 
 

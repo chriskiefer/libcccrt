@@ -41,13 +41,13 @@ endif()
 #find_package(Armadillo REQUIRED)
 #include_directories(${ARMADILLO_INCLUDE_DIRS})
 
-include_directories(armadillo/include eigen)
+include_directories(eigen-3.4.0 EigenRand)
 
 # target_include_directories(
 #   "${eigen_SOURCE_DIR}"
 # )
 
-add_executable(cccrt main.cpp shannonEntropy.hpp ETC.hpp CCC.hpp)
+add_executable(cccrt main.cpp shannonEntropy.hpp ETC.hpp CCC.hpp RPC.hpp)
 #target_link_libraries(cccrt ${ARMADILLO_LIBRARIES})
 target_link_libraries(cccrt gtest_main)
 

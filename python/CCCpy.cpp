@@ -10,6 +10,8 @@
 #include "ETC.hpp"
 #include "CCC.hpp"
 #include "LZ.hpp"
+#include "RPC.hpp"
+#include "shannonEntropy.hpp"
 
 
 #include <pybind11/pybind11.h>
@@ -87,6 +89,17 @@ double NLZ(Eigen::Ref<ArrayXL> v) {
   return LZ::calcNorm(v);
 }
 
+double shannonEntropy(Eigen::Ref<ArrayXL> v) {
+  return shannonEntropy::calc(v);
+  
+}
+
+double randomProjectionComplexity(Eigen::Ref<Eigen::MatrixXd> &projectionMatrix, Eigen::Ref<Eigen::VectorXd> &data, const size_t resolution) {
+  return RPC::calc(projectionMatrix, data, resolution);
+  // return 0;
+}
+
+
 PYBIND11_MODULE(cccrt, m) {
     m.doc() = "Libcccrt"; // optional module docstring
     m.def("greet", &greet, "Hello");
@@ -97,4 +110,7 @@ PYBIND11_MODULE(cccrt, m) {
     m.def("CCCausality", &CCCausality, "Calculates joint compression-complexity causality on an two arrays of symbols");
     m.def("LZ", &LZ, "Calculates lempel-ziv complexity on an array of symbols");
     m.def("NLZ", &NLZ, "Calculates normalised lempel-ziv complexity on an array of symbols");
+    m.def("shannonEntropy", &shannonEntropy, "Calculates shannon entropy on an array of symbols");
+    m.def("createRPMatrix", &RPC::createProjectionMatrix, py::return_value_policy::reference_internal);
+    m.def("RPC", &randomProjectionComplexity, "Random projection complexity");
 }

@@ -6,6 +6,7 @@
 #include <thread>
 #include "CCC.hpp"
 #include "LZ.hpp"
+#include "RPC.hpp"
 #include <Eigen/Dense>
  
 using Eigen::ArrayXi;
@@ -172,6 +173,55 @@ TEST(CCCTest, LZTest) {
     EXPECT_EQ(LZ::calc(ei({1,2,3,3,3,2,3,1})), 5);
     EXPECT_EQ(LZ::calc(ei({100,9,8,101,102,2,3,4,9,100,103,104,101,105,8,9,106,2,3,4,9,8,6,105,3,100})), 19);
 }
+TEST(CCCTest, RPCProjMatrixTest) {
+    auto proj = RPC::createProjectionMatrix(10,2);
+    EXPECT_EQ(proj.rows(), 2);
+    EXPECT_EQ(proj.cols(), 10);
+}
+
+TEST(CCCTest, RPCProjectionTest) {
+    auto proj = RPC::createProjectionMatrix(4,2);
+    Eigen::VectorXd data(12);
+    data << 0,0,1,0,2,0,0,0,1,0,0,0;
+    // cout << data << endl;
+    
+    EXPECT_LT(RPC::calc(proj, data, 10), 0.1);
+
+    data = Eigen::VectorXd::Random(100,1);
+    // cout << data << endl;
+    
+    EXPECT_GT(RPC::calc(proj, data, 4), 0.4);
+
+    auto proj2 = RPC::createProjectionMatrix(10,3);
+    EXPECT_GT(RPC::calc(proj2, data, 3), 0.4);
+
+}
+
+TEST(CCCTest, RPCIndexing) {
+    Eigen::VectorXd idx1d(1);
+    idx1d << 3;
+    EXPECT_EQ(RPC::calcXdFlatArrayIndex(idx1d,10), 3);    
+    EXPECT_EQ(RPC::calcXdFlatArrayIndex(idx1d,1000), 3);    
+
+    Eigen::VectorXd idx2d(2);
+    idx2d << 0,0;
+    EXPECT_EQ(RPC::calcXdFlatArrayIndex(idx2d,10), 0);    
+    idx2d << 1,0;
+    EXPECT_EQ(RPC::calcXdFlatArrayIndex(idx2d,10), 10);    
+    idx2d << 9,9;
+    EXPECT_EQ(RPC::calcXdFlatArrayIndex(idx2d,10), 99);    
+
+    Eigen::VectorXd idx3d(3);
+    idx3d << 1,1,1;
+    EXPECT_EQ(RPC::calcXdFlatArrayIndex(idx3d,4), 21);    
+    idx3d << 0,0,1;
+    EXPECT_EQ(RPC::calcXdFlatArrayIndex(idx3d,4), 1);    
+    idx3d << 0,2,1;
+    EXPECT_EQ(RPC::calcXdFlatArrayIndex(idx3d,4), 9);    
+    idx3d << 2,2,1;
+    EXPECT_EQ(RPC::calcXdFlatArrayIndex(idx3d,4), 41);    
+
+}
 
 int main(int argc, char **argv) {
     cout << "CCC library tests\n";
@@ -180,6 +230,18 @@ int main(int argc, char **argv) {
     int res =  RUN_ALL_TESTS();
     unsigned int n = std::thread::hardware_concurrency();
     std::cout << n << " concurrent threads are supported.\n";
+    //perf testing
+    clock_t t = clock();
+    // auto proj = RPC::createProjectionMatrix(10,2);
+    // auto data = Eigen::VectorXd::Random(1000,1);
+    // auto dataSym = ArrayXL::Random(1000,1);
+    // for(int i=0; i < 100; i++) {
+    //     // RPC::calc(proj, data, 10);
+    //     // shannonEntropy::calc(dataSym);
+    //     // LZ::calc(dataSym);
+    // }
+    // const double work_time = (clock() - t) / double(CLOCKS_PER_SEC) * 1000;
+    // cout << work_time << " ms" << endl;
 
 
     // auto tmp = ei({7,8,9});
@@ -218,11 +280,3 @@ int main(int argc, char **argv) {
     return res;
 }
 
-
-/*
- realtime stuff -
- spectral RMS rate, 512 hop size = 86Hz
- Looking at a window of 1 sec = 86 values, 86 win size, sym size =16 -> 49ms for worst case random data -->>> realtime is fine
- for CCC measure, can use large scale multithreading
- 
- */
