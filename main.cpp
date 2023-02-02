@@ -7,6 +7,7 @@
 #include "CCC.hpp"
 #include "LZ.hpp"
 #include "RPC.hpp"
+#include "fractal.hpp"
 #include <Eigen/Dense>
  
 using Eigen::ArrayXi;
@@ -185,15 +186,15 @@ TEST(CCCTest, RPCProjectionTest) {
     data << 0,0,1,0,2,0,0,0,1,0,0,0;
     // cout << data << endl;
     
-    EXPECT_LT(RPC::calc(proj, data, 10), 0.1);
+    EXPECT_LT(RPC::calc(proj, data, 10), 5);
 
     data = Eigen::VectorXd::Random(100,1);
     // cout << data << endl;
     
-    EXPECT_GT(RPC::calc(proj, data, 4), 0.4);
+    EXPECT_GT(RPC::calc(proj, data, 4), 5);
 
     auto proj2 = RPC::createProjectionMatrix(10,3);
-    EXPECT_GT(RPC::calc(proj2, data, 3), 0.4);
+    EXPECT_GT(RPC::calc(proj2, data, 3, 0.001), 5);
 
 }
 
@@ -223,6 +224,42 @@ TEST(CCCTest, RPCIndexing) {
 
 }
 
+TEST(CCCTest, sevcik) {
+    Eigen::VectorXd data(12);
+    data << 1.0, 3.0, 4.2, 4.2, 1.3,1.2,9.7,4.2, 2.71,2,5,10.3;
+    
+    EXPECT_DOUBLE_EQ(fractal::sevcik::calc(data), 1.417138504999742);
+
+    Eigen::VectorXd data2(10);
+    data2 << 0.59268124, 0.10992054, 0.49541226, 0.92321486, 0.15333986,
+       0.10439158, 0.42802243, 0.22755213, 0.71985698, 0.84432153;
+    EXPECT_NEAR(fractal::sevcik::calc(data2), 1.4940149591892897, 0.00001);
+
+    Eigen::VectorXd data3(100);
+    data3 << 0.        ,  0.04997917,  0.09983342,  0.14943813,  0.19866933,
+        0.24740396,  0.29552021,  0.34289781,  0.38941834,  0.43496553,
+        0.47942554,  0.52268723,  0.56464247,  0.60518641,  0.64421769,
+        0.68163876,  0.71735609,  0.75128041,  0.78332691,  0.8134155 ,
+        0.84147098,  0.86742323,  0.89120736,  0.91276394,  0.93203909,
+        0.94898462,  0.96355819,  0.97572336,  0.98544973,  0.99271299,
+        0.99749499,  0.99978376,  0.9995736 ,  0.99686503,  0.99166481,
+        0.98398595,  0.97384763,  0.9612752 ,  0.94630009,  0.92895972,
+        0.90929743,  0.88736237,  0.86320937,  0.83689879,  0.8084964 ,
+        0.7780732 ,  0.74570521,  0.71147335,  0.67546318,  0.6377647 ,
+        0.59847214,  0.55768372,  0.51550137,  0.47203054,  0.42737988,
+        0.38166099,  0.33498815,  0.28747801,  0.23924933,  0.19042265,
+        0.14112001,  0.09146464,  0.04158066, -0.00840725, -0.05837414,
+       -0.10819513, -0.15774569, -0.20690197, -0.2555411 , -0.30354151,
+       -0.35078323, -0.39714817, -0.44252044, -0.48678665, -0.52983614,
+       -0.57156132, -0.61185789, -0.65062514, -0.68776616, -0.72318812,
+       -0.7568025 , -0.78852525, -0.81827711, -0.8459837 , -0.87157577,
+       -0.89498936, -0.91616594, -0.93505258, -0.95160207, -0.96577306,
+       -0.97753012, -0.98684386, -0.993691  , -0.99805444, -0.99992326,
+       -0.99929279, -0.99616461, -0.99054654, -0.98245261, -0.97190307;
+    EXPECT_NEAR(fractal::sevcik::calc(data3), 1.1202632289010772, 0.00001);
+
+}
+
 int main(int argc, char **argv) {
     cout << "CCC library tests\n";
     // VectorXi test {0};
@@ -231,17 +268,18 @@ int main(int argc, char **argv) {
     unsigned int n = std::thread::hardware_concurrency();
     std::cout << n << " concurrent threads are supported.\n";
     //perf testing
+    auto proj = RPC::createProjectionMatrix(50,3);
+    auto data = Eigen::VectorXd::Random(1000,1);
     clock_t t = clock();
-    // auto proj = RPC::createProjectionMatrix(10,2);
-    // auto data = Eigen::VectorXd::Random(1000,1);
     // auto dataSym = ArrayXL::Random(1000,1);
-    // for(int i=0; i < 100; i++) {
-    //     // RPC::calc(proj, data, 10);
-    //     // shannonEntropy::calc(dataSym);
-    //     // LZ::calc(dataSym);
-    // }
-    // const double work_time = (clock() - t) / double(CLOCKS_PER_SEC) * 1000;
-    // cout << work_time << " ms" << endl;
+    for(int i=0; i < 1000; i++) {
+        RPC::calc(proj, data, 10, 1);
+        // shannonEntropy::calc(dataSym);
+        // LZ::calc(dataSym);
+        // fractal::sevcik::calc(data);
+    }
+    const double work_time = (clock() - t) / double(CLOCKS_PER_SEC) * 1000;
+    cout << work_time << " ms" << endl;
 
 
     // auto tmp = ei({7,8,9});

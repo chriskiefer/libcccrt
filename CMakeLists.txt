@@ -47,7 +47,7 @@ include_directories(eigen-3.4.0 EigenRand)
 #   "${eigen_SOURCE_DIR}"
 # )
 
-add_executable(cccrt main.cpp shannonEntropy.hpp ETC.hpp CCC.hpp RPC.hpp)
+add_executable(cccrt main.cpp shannonEntropy.hpp ETC.hpp CCC.hpp RPC.hpp fractal.hpp)
 #target_link_libraries(cccrt ${ARMADILLO_LIBRARIES})
 target_link_libraries(cccrt gtest_main)
 

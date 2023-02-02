@@ -94,8 +94,8 @@ double shannonEntropy(Eigen::Ref<ArrayXL> v) {
   
 }
 
-double randomProjectionComplexity(Eigen::Ref<Eigen::MatrixXd> &projectionMatrix, Eigen::Ref<Eigen::VectorXd> &data, const size_t resolution) {
-  return RPC::calc(projectionMatrix, data, resolution);
+double randomProjectionComplexity(Eigen::Ref<Eigen::MatrixXd> &projectionMatrix, Eigen::Ref<Eigen::VectorXd> &data, const size_t resolution, const double hop=0.5) {
+  return RPC::calc(projectionMatrix, data, resolution, hop);
   // return 0;
 }
 

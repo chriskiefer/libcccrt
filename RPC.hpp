@@ -13,8 +13,8 @@ struct RPC {
     return projectionMatrix;
   }
 
-  static Eigen::MatrixXd calcProjection(const Eigen::MatrixXd &projectionMatrix, const Eigen::VectorXd &data) {
-    size_t hopSize = static_cast<size_t>(projectionMatrix.cols() / 2);
+  static Eigen::MatrixXd calcProjection(const Eigen::MatrixXd &projectionMatrix, const Eigen::VectorXd &data, double hop=0.5) {
+    size_t hopSize = std::max((size_t)1, static_cast<size_t>(projectionMatrix.cols() * hop));
     size_t nHops = static_cast<size_t>((data.size() - projectionMatrix.cols()) / hopSize) + 1;
     // cout << "Hopsize: " << hopSize << ", Hops: " << nHops << endl;
     // cout << projectionMatrix << endl;
@@ -75,14 +75,16 @@ struct RPC {
       // cout << index << endl;
       histo(index) = true;
     }
-    double area= histo.count() / (double)histoSize;
+
+    // double area= histo.count() / (double)histoSize;
     // cout << area << endl;
 
-    return area;
+    return histo.count();
   }
-  static double calc(const Eigen::MatrixXd &projectionMatrix, const Eigen::VectorXd &data, const size_t resolution) {
+
+  static double calc(const Eigen::MatrixXd &projectionMatrix, const Eigen::VectorXd &data, const size_t resolution, double hop=0.5) {
     double res = 0;
-    auto projections = RPC::calcProjection(projectionMatrix, data);
+    auto projections = RPC::calcProjection(projectionMatrix, data, hop);
     res = calculateProjectionArea(projections, resolution);
     return res;
   }
