@@ -6,6 +6,10 @@
 
 namespace fractal {
   struct sevcik {
+    /* references:
+    https://arxiv.org/pdf/1003.5266.pdf
+    https://neuropsychology.github.io/NeuroKit/_modules/neurokit2/complexity/fractal_sevcik.html#fractal_sevcik
+    */
     static double calc(const Eigen::VectorXd &sequence) {
       Eigen::ArrayXd y(sequence.size()-1);
       
