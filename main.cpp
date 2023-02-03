@@ -268,12 +268,12 @@ int main(int argc, char **argv) {
     unsigned int n = std::thread::hardware_concurrency();
     std::cout << n << " concurrent threads are supported.\n";
     //perf testing
-    auto proj = RPC::createProjectionMatrix(50,3);
+    auto proj = RPC::createProjectionMatrix(16,5);
     auto data = Eigen::VectorXd::Random(1000,1);
     clock_t t = clock();
     // auto dataSym = ArrayXL::Random(1000,1);
     for(int i=0; i < 1000; i++) {
-        RPC::calc(proj, data, 10, 1);
+        RPC::calc(proj, data, 100, 1);
         // shannonEntropy::calc(dataSym);
         // LZ::calc(dataSym);
         // fractal::sevcik::calc(data);

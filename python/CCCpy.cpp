@@ -12,6 +12,7 @@
 #include "LZ.hpp"
 #include "RPC.hpp"
 #include "shannonEntropy.hpp"
+#include "fractal.hpp"
 
 
 #include <pybind11/pybind11.h>
@@ -65,40 +66,44 @@ double ETC(Eigen::Ref<ArrayXL> v) {
   return ETC::calc(v);
 }
 
-double ETCJoint(Eigen::Ref<ArrayXL> v0, Eigen::Ref<ArrayXL> v1) {
+double ETCJoint(const Eigen::Ref<ArrayXL> v0, const Eigen::Ref<ArrayXL> v1) {
   return ETC::calcJoint(v0, v1);
 }
 
-double dynamicCC(Eigen::Ref<ArrayXL> seq, size_t dx, size_t xpast, size_t step) {
+double dynamicCC(const Eigen::Ref<ArrayXL> seq, const size_t dx, const size_t xpast, const size_t step) {
   return CCC::dynamicCC(seq, dx, xpast, step);
 }
 
-double dynamicCCJoint(Eigen::Ref<ArrayXL> X, Eigen::Ref<ArrayXL> Y, size_t dx, size_t past, size_t step) {
+double dynamicCCJoint(const Eigen::Ref<ArrayXL> X, const Eigen::Ref<ArrayXL> Y, const size_t dx, const size_t past, const size_t step) {
   return CCC::dynamicCCJoint(X, Y, dx, past, step, CCC::SINGLETHREAD);
 }
 
-std::tuple<double, unsigned int> CCCausality(Eigen::Ref<ArrayXL>  effectSeq, Eigen::Ref<ArrayXL> causeSeq, size_t dx, size_t past, size_t step) {
+std::tuple<double, unsigned int> CCCausality(const Eigen::Ref<ArrayXL>  effectSeq, const Eigen::Ref<ArrayXL> causeSeq, const size_t dx, const size_t past, const size_t step) {
   return CCC::CCCausality(effectSeq, causeSeq, dx, past, step);
 }
 
-long LZ(Eigen::Ref<ArrayXL> v) {
+size_t LZ(const Eigen::Ref<ArrayXL> v) {
   return LZ::calc(v);
 }
 
-double NLZ(Eigen::Ref<ArrayXL> v) {
+double NLZ(const Eigen::Ref<ArrayXL> v) {
   return LZ::calcNorm(v);
 }
 
-double shannonEntropy(Eigen::Ref<ArrayXL> v) {
+double shannonEntropy(const Eigen::Ref<ArrayXL> v) {
   return shannonEntropy::calc(v);
   
 }
 
-double randomProjectionComplexity(Eigen::Ref<Eigen::MatrixXd> &projectionMatrix, Eigen::Ref<Eigen::VectorXd> &data, const size_t resolution, const double hop=0.5) {
+double randomProjectionComplexity(const Eigen::Ref<Eigen::MatrixXd> &projectionMatrix, const Eigen::Ref<Eigen::VectorXd> &data, const size_t resolution, const double hop=0.5) {
   return RPC::calc(projectionMatrix, data, resolution, hop);
   // return 0;
 }
 
+double sevcik(const Eigen::Ref<Eigen::VectorXd> v) {
+  return fractal::sevcik::calc(v);
+  
+}
 
 PYBIND11_MODULE(cccrt, m) {
     m.doc() = "Libcccrt"; // optional module docstring
@@ -113,4 +118,5 @@ PYBIND11_MODULE(cccrt, m) {
     m.def("shannonEntropy", &shannonEntropy, "Calculates shannon entropy on an array of symbols");
     m.def("createRPMatrix", &RPC::createProjectionMatrix, py::return_value_policy::reference_internal);
     m.def("RPC", &randomProjectionComplexity, "Random projection complexity");
+    m.def("sevcik", &sevcik, "Sevcik fractal complexity");
 }

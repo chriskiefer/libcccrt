@@ -2,6 +2,7 @@
 
 #include <iostream>
 #include <Eigen/Dense>
+#include <Eigen/Sparse>
 #include <EigenRand>
 
 
@@ -32,7 +33,7 @@ struct RPC {
     return projections;
   }
 
-  static size_t calcXdFlatArrayIndex(const Eigen::VectorXd &indexTuple, const size_t bound) {
+  static inline size_t calcXdFlatArrayIndex(const Eigen::VectorXd &indexTuple, const size_t bound) {
     size_t index = indexTuple(0);
     for (size_t i =1; i < indexTuple.size(); i++) {
         index *= bound;
@@ -67,19 +68,30 @@ struct RPC {
 
     //flat storage of multidimensional histogram, fill with zeros
     size_t histoSize = pow(resolution,dims);
-    Eigen::Array<bool, Eigen::Dynamic, 1> histo(histoSize);
-    histo.setConstant(false);
+
+    // Eigen::Array<bool, Eigen::Dynamic, 1> histo(histoSize);
+    // histo.setConstant(false);
+
+    Eigen::SparseVector<size_t> histo(histoSize);
+  
+    // size_t area=0;
     for(size_t i=0; i < projections.cols(); i++) {
       Eigen::VectorXd indexTuple = projections.col(i);
       size_t index = RPC::calcXdFlatArrayIndex(indexTuple, resolution);
       // cout << index << endl;
-      histo(index) = true;
+      // histo(index) = true;
+      // if (histo.coeffRef(index)==0)
+      //   area++;
+      histo.coeffRef(index) = 1;
     }
 
     // double area= histo.count() / (double)histoSize;
     // cout << area << endl;
 
-    return histo.count();
+    // double area = histo.count();
+    double area = histo.sum();
+    // cout << "Area: " << area << ", sum: " << histo.sum() << endl;
+    return area;
   }
 
   static double calc(const Eigen::MatrixXd &projectionMatrix, const Eigen::VectorXd &data, const size_t resolution, double hop=0.5) {
