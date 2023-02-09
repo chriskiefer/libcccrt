@@ -23,9 +23,11 @@ struct RPC {
     // cout << projections << endl;
     for(size_t i=0; i < nHops; i++) {
       // cout << "dw: " << i;
-      auto dataWindow = data(Eigen::seqN(i*hopSize, projectionMatrix.cols()));
+      // auto dataWindow = data(Eigen::seqN(i*hopSize, projectionMatrix.cols()));
+      const auto dataWindow = data.segment(i*hopSize,projectionMatrix.cols());
+
       // cout << "\n" << dataWindow << endl;
-      auto projection = projectionMatrix * dataWindow;
+      const auto projection = projectionMatrix * dataWindow;
       // cout << projection << endl;
       projections.col(i) = projection;
     }

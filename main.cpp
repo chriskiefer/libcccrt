@@ -15,35 +15,6 @@ using Eigen::ArrayXi;
 using namespace std;
 using namespace arma;
 
-// The fixture for testing class Foo.
-//class CCCTest : public ::testing::Test {
-//protected:
-//    // You can remove any or all of the following functions if its body
-//    // is empty.
-//
-//    CCCTest() {
-//        // You can do set-up work for each test here.
-//    }
-//
-//    ~CCCTest() override {
-//        // You can do clean-up work that doesn't throw exceptions here.
-//    }
-//
-//    // If the constructor and destructor are not enough for setting up
-//    // and cleaning up each test, you can define the following methods:
-//
-//    void SetUp() override {
-//        // Code here will be called immediately after the constructor (right
-//        // before each test).
-//    }
-//
-//    void TearDown() override {
-//        // Code here will be called immediately after each test (right
-//        // before the destructor).
-//    }
-//    // Objects declared here can be used by all tests in the test suite for Foo.
-//};
-
 ArrayXL ei(std::vector<long> v) {
     ArrayXL seq(v.size()); 
     for(size_t i=0; i < v.size(); i++) seq[i] = v[i];
@@ -268,12 +239,13 @@ int main(int argc, char **argv) {
     unsigned int n = std::thread::hardware_concurrency();
     std::cout << n << " concurrent threads are supported.\n";
     //perf testing
-    auto proj = RPC::createProjectionMatrix(16,5);
+    auto proj = RPC::createProjectionMatrix(64,4);
     auto data = Eigen::VectorXd::Random(1000,1);
     clock_t t = clock();
-    // auto dataSym = ArrayXL::Random(1000,1);
+    auto dataSym = ArrayXL::Random(1000,1);
+    cout << dataSym << endl;
     for(int i=0; i < 1000; i++) {
-        RPC::calc(proj, data, 100, 1);
+        // RPC::calc(proj, data, 100, 0.5);
         // shannonEntropy::calc(dataSym);
         // LZ::calc(dataSym);
         // fractal::sevcik::calc(data);
