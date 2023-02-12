@@ -1,6 +1,5 @@
 #pragma once
 
-#include <armadillo>
 #include <iostream>
 #include <unordered_map>
 #include <cmath>
