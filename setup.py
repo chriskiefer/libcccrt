@@ -10,7 +10,7 @@ cccrt = Pybind11Extension  (
     'cccrt',
     sources=['CCCpy.cpp'],
     depends=['CCC.hpp'],
-    extra_compile_args=['-O3', '-DPYTHON_BUILD', '$(python3.10-config --includes)', '$(python3.10 -m pybind11 --includes)'],
+    extra_compile_args=['-O3', '-DPYTHON_BUILD'],
     include_dirs=['.','./eigen-3.4.0', './EigenRand'],
 )
 
