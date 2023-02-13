@@ -3,7 +3,7 @@
 #include <iostream>
 #include "shannonEntropy.hpp"
 #include <Eigen/Dense>
- 
+#include <map>
 
 using ArrayXL = Eigen::Array<int64_t, Eigen::Dynamic, 1>; 
 

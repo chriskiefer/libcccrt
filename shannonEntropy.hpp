@@ -17,7 +17,7 @@ struct shannonEntropy {
 
     static shannonEntropy::histoMap calcDistribution(const ArrayXL &seq) {
         shannonEntropy::histoMap histo;
-        for (const uint64_t &v: seq) {
+        for (const uint64_t v: seq) {
             shannonEntropy::histoMap::iterator it = histo.find(v);
             if (it == histo.end()) {
                 histo.insert(std::make_pair(v, 1));
