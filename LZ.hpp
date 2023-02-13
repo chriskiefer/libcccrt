@@ -2,13 +2,14 @@
 
 #include <iostream>
 #include <Eigen/Dense>
+#include <vector>
 
 using ArrayXL = Eigen::Array<int64_t, Eigen::Dynamic, 1>; 
 
 //calc lempel ziv
 struct LZ {
     static size_t calc(const ArrayXL &seq) {
-      vector<ArrayXL> dictionary;
+      std::vector<ArrayXL> dictionary;
       size_t wordStart=0;
       size_t wordEnd=1;
       while (wordEnd <= seq.size()) {
