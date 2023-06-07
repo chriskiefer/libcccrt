@@ -1,0 +1,26 @@
+class:: CccRPC
+summary:: Random Projection Complexity
+related:: TODO
+categories:: UGens>TODO
+
+description::
+
+Random Projection Complexity
+
+
+classmethods::
+
+method::ar, kr
+
+argument::TODO
+
+argument::TODO
+
+
+examples::
+
+code::
+
+{ CccRPC.ar(/* TODO */) }.play
+
+::
