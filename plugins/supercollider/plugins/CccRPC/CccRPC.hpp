@@ -20,7 +20,7 @@ public:
 private:
     void next(int nSamples);
 
-    enum Inputs { IN_SIG, IN_HIGHDIM, IN_LOWDIM, IN_RPCHOP, IN_RPCRES, IN_WINSIZE, IN_MAXWINSIZE, IN_HOPSIZE  };
+    enum Inputs { IN_SIG, IN_HIGHDIM, IN_LOWDIM, IN_RPCHOP, IN_RPCRES, IN_WINSIZE, IN_HOPSIZE, IN_MAXWINSIZE  };
 
     Eigen::MatrixXd proj;
     RingBuf<double> ringBuf;

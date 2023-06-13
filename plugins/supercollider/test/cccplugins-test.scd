@@ -3,4 +3,10 @@
 
 {CccRPC.ar(WhiteNoise.ar).poll}.play
 
-{var w = XFade2.ar(WhiteNoise.ar, Saw.ar(100), MouseX.kr(-1,1)); CccRPC.ar(w, 10, 2).poll; w}.play
+(
+{
+	var w = XFade2.ar(WhiteNoise.ar, LFPulse.ar(100), MouseX.kr(-1,1));
+	var rpc=CccRPC.ar(w, 8, 4, 0.5, 3, 10,0.5).poll;
+	[w, rpc/RunningMax.ar(rpc)]
+}.scope
+)

@@ -5,22 +5,65 @@ categories:: UGens>TODO
 
 description::
 
-Random Projection Complexity
+Calculates the Random Projection Complexity (RPC) of a signal.  RPC can give insights into the regularity or predictability of a signal.  For example, noise will have a high value, and a simple sine wave will have a low value. 
+
+
+
+For further details, see:
+
+Kiefer, C. 2023. Dynamical complexity measurement with random projection: a metric optimised for realtime signal processing. Sound and Music Computing, Stockholm, Sweden, 12-17 June 2023.
+(http://sro.sussex.ac.uk/id/eprint/111991/1/smc2023%20RPC_final.pdf)
+
+Kiefer, C., Overholt, D. and Eldridge, A., 2020. Shaping the behaviour of feedback instruments with complexity-controlled gain dynamics. In 20th International Conference on New Interfaces for Musical Expression (pp. 343-348).
+(https://vbn.aau.dk/ws/files/395237786/nime2020_paper66.pdf)
 
 
 classmethods::
 
-method::ar, kr
+method::ar
 
-argument::TODO
+argument::input
 
-argument::TODO
+The input signal
+
+argument::highDim
+
+The size of the higher dimension from which to project (not modulateable)
+
+argument::lowDim
+
+The size of the lower target dimension (not modulateable)
+
+argument::rpcHopSize
+
+The percetage (0-1) of the higher dimension size to jump before making a new RPC projection.
+
+argument::rpcRes
+
+The resolution of the histogram in the low dimensional space
+
+argument::winSize
+
+The size of the sliding window from which to take RPC readings (unit:milliseconds)
+
+argument::hopSize
+
+The percentage (0-1) hop size of the sliding window
+
+argument::maxWinSize
+
+The maximum window size you would expect to use (unit: milliseconds) (not modulateable)
 
 
 examples::
 
 code::
 
-{ CccRPC.ar(/* TODO */) }.play
-
+(
+{
+	var w = XFade2.ar(WhiteNoise.ar, Saw.ar(100), MouseX.kr(-1,1));
+	var rpc=CccRPC.ar(w, 10, 2, 0.5, 20,10,20, 0.5).poll;
+	[w, rpc/RunningMax.ar(rpc)]
+}.scope
+)
 ::

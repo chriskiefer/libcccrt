@@ -9,7 +9,7 @@ static InterfaceTable* ft;
 namespace Ccc {
 
 CccRPC::CccRPC() {
-    double maxWindowSize = 50.0; //make this a parameter
+    double maxWindowSize = in0(IN_MAXWINSIZE); 
     mMaxWindowSize = static_cast<size_t>(maxWindowSize / 1000.0 * sampleRate());
     ringBuf.setSize(mMaxWindowSize);
     proj = RPC::createProjectionMatrix(static_cast<size_t>(in0(IN_HIGHDIM)), static_cast<size_t>(in0(IN_LOWDIM)));
@@ -20,8 +20,8 @@ CccRPC::CccRPC() {
 void CccRPC::next(int nSamples) {
     const float* input = in(IN_SIG);
     float* outbuf = out(0);
-    double hopSize = 10.0; //make this a parameter
-    double windowSize = 20.0; //make this a parameter
+    double windowSize = in0(IN_WINSIZE); 
+    double hopSize = in0(IN_HOPSIZE) * windowSize; 
 
     for (int i = 0; i < nSamples; ++i) {
         using namespace std;
@@ -36,7 +36,7 @@ void CccRPC::next(int nSamples) {
                 static_cast<size_t>(windowSize / 1000.0 * sampleRate());
             auto window = ringBuf.getBuffer(min(windowSizeInSamples, mMaxWindowSize));
 
-            rpc = RPC::calc(proj, window, 10, 0.5);
+            rpc = RPC::calc(proj, window, in0(IN_RPCRES), in0(IN_RPCHOP));
         }
         outbuf[i] = rpc;
     }
