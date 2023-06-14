@@ -1,15 +1,17 @@
 class:: CccRPC
 summary:: Random Projection Complexity
 related:: TODO
-categories:: UGens>TODO
+categories:: UGens>Analysis
 
 description::
 
-Calculates the Random Projection Complexity (RPC) of a signal.  RPC can give insights into the regularity or predictability of a signal.  For example, noise will have a high value, and a simple sine wave will have a low value. 
+Calculates the Random Projection Complexity (RPC) of a signal.  RPC can give insights into the regularity or predictability of a signal.  For example, noise will have a high value, and a simple square wave will have a low value. 
+
+Full details of the algorithm are given in the references below; put simply, the algorithm works as follows: RPC is a compression-based metric, which means that it equates the compressabiity of data with its complexity. RPC uses random projection, a lossy compression method.  It works on the principle that when you use a randomly generated matrix to project data from a high dimension to a lower dimension, the distance between data points will be roughly preserved (think about shining a torch on an object, and looking at its shadow, a 3D->2D projection).  This UGen takes a block of the most recent data in a signal, and runs a sliding window across it. The window's width is determined by the size of the higher dimension, from which to make projections.  The window is moved across the block, and the projections in the lower dimensional space are collected. RPC then treats this space as a multi-dimensional histogram, and counts the number of non-zero bins, resulting in a measure of complexity. Intuitively, regular patterns in the signal will be projected onto similar spots in the lower dimensional space, and therefore take up less room in the histogram. Conversely, complex or noisy signals will not have repeating patterns, so they will take up more space in the histogram.
 
 
 
-For further details, see:
+References:
 
 Kiefer, C. 2023. Dynamical complexity measurement with random projection: a metric optimised for realtime signal processing. Sound and Music Computing, Stockholm, Sweden, 12-17 June 2023.
 (http://sro.sussex.ac.uk/id/eprint/111991/1/smc2023%20RPC_final.pdf)
