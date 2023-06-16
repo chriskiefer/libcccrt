@@ -2,7 +2,7 @@
 
 Author: Chris Kiefer
 
-Random Projection Complexity
+libcccrt ugens
 
 ### Requirements
 
@@ -11,12 +11,9 @@ Random Projection Complexity
 
 ### Building
 
-Clone the project:
 
-    git clone https://github.com/chriskiefer/Ccc
-    cd Ccc
-    mkdir build
-    cd build
+mkdir build
+cd build
 
 Then, use CMake to configure and build it:
 

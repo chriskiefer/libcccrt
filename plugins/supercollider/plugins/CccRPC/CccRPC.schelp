@@ -1,6 +1,5 @@
 class:: CccRPC
 summary:: Random Projection Complexity
-related:: TODO
 categories:: UGens>Analysis
 
 description::
@@ -9,7 +8,7 @@ Calculates the Random Projection Complexity (RPC) of a signal.  RPC can give ins
 
 Full details of the algorithm are given in the references below; put simply, the algorithm works as follows: RPC is a compression-based metric, which means that it equates the compressabiity of data with its complexity. RPC uses random projection, a lossy compression method.  It works on the principle that when you use a randomly generated matrix to project data from a high dimension to a lower dimension, the distance between data points will be roughly preserved (think about shining a torch on an object, and looking at its shadow, a 3D->2D projection).  This UGen takes a block of the most recent data in a signal, and runs a sliding window across it. The window's width is determined by the size of the higher dimension, from which to make projections.  The window is moved across the block, and the projections in the lower dimensional space are collected. RPC then treats this space as a multi-dimensional histogram, and counts the number of non-zero bins, resulting in a measure of complexity. Intuitively, regular patterns in the signal will be projected onto similar spots in the lower dimensional space, and therefore take up less room in the histogram. Conversely, complex or noisy signals will not have repeating patterns, so they will take up more space in the histogram.
 
-
+Usage notes:  RPC is not normalised, so the scale of the readings will change along with the parameters.  You could divide by RunningMax.ar(rpc) as an adaptive normalisation.
 
 References:
 
@@ -46,7 +45,7 @@ The resolution of the histogram in the low dimensional space
 
 argument::winSize
 
-The size of the sliding window from which to take RPC readings (unit:milliseconds)
+The size of the sliding window from which to take RPC readings (unit:milliseconds).  This should correspond to the timescale of events in the signal being analysed.
 
 argument::hopSize
 
@@ -59,13 +58,59 @@ The maximum window size you would expect to use (unit: milliseconds) (not modula
 
 examples::
 
-code::
+Listen to the microphone and show the RPC of the signal
 
+code::
 (
 {
-	var w = XFade2.ar(WhiteNoise.ar, Saw.ar(100), MouseX.kr(-1,1));
-	var rpc=CccRPC.ar(w, 10, 2, 0.5, 20,10,20, 0.5).poll;
+	CccRPC.ar(SoundIn.ar(0), 8, 4, 0.5, 3, 300,0.5).poll;
+	0
+}.play
+)
+::
+
+Use the mouse X to xfade between Noise and a Pulse wave. The noise signal will have a much higher RPC value than the pulse wave.
+
+code::
+(
+{
+	var w = XFade2.ar(WhiteNoise.ar, LFPulse.ar(100), MouseX.kr(-1,1));
+	var rpc=CccRPC.ar(w, 8, 4, 0.5, 3, 10,0.5).poll;
 	[w, rpc/RunningMax.ar(rpc)]
 }.scope
+)
+::
+
+
+This is a simulated feedback system, based on CoFlo.  Mouse X increases the amount of complexity-based compression. Mouse Y determines the gain of the feedback loop.  With high gain and no compression, the system will move into saturated feedback (careful of your ears!). With more compression, the system will be prevented from moving into saturation.
+
+code::
+(
+Ndef(\fb2, {
+	var w;
+	var wfb, mfccs, vib, comx, gain, thresh, env, gate;
+	//feedback system
+	wfb = InFeedback.ar(10);
+	//simulate bowed strings
+	w = DWGBowed.ar([49,50,100], 0.5, 0.2, 1, Phasor.ar(1, 1.0/SampleRate.ir * 0.1), 0.4, 1, 1, 0.55, 2).mean;
+	//scale the gain of the feedback and add to system
+	w = w + wfb.madd(MouseY.kr(0.18,0.25));
+	//put all signals through the soundboard
+	w = DWGSoundBoard.ar(w);
+	//calculate complexity
+	comx=CccRPC.ar(w, 10, 3, 0.5, 10, 900,0.5,2000).poll;
+	thresh=500;
+	//complexity compression - bring down the gain if the complexity rises over a certain threshold
+	comx = 1.0-comx.min(thresh).linlin(0,thresh,0,1);
+	//compression attach and release, and amount
+	env = Amplitude.ar(comx, 0.02,0.5) * MouseX.kr(0,3);
+	gain = 1 - env;
+	// gain.poll;
+	w = LPF.ar(w,6000);
+	//send feedback signal
+	Out.ar(10, w * gain);
+	//output in stereo
+	w!2
+}).play;
 )
 ::

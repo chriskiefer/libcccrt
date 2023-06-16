@@ -10,3 +10,16 @@
 	[w, rpc/RunningMax.ar(rpc)]
 }.scope
 )
+
+
+(
+{
+	CccRPC.ar(SoundIn.ar(0), 8, 4, 0.5, 3, 300,0.5).poll;
+	0
+}.play
+)
+
+
+(
+Gui
+)
