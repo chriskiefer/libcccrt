@@ -239,19 +239,19 @@ int main(int argc, char **argv) {
     unsigned int n = std::thread::hardware_concurrency();
     std::cout << n << " concurrent threads are supported.\n";
     //perf testing
-    auto proj = RPC::createProjectionMatrix(64,4);
-    auto data = Eigen::VectorXd::Random(1000,1);
-    clock_t t = clock();
-    auto dataSym = ArrayXL::Random(1000,1);
-    cout << dataSym << endl;
-    for(int i=0; i < 1000; i++) {
+    // auto proj = RPC::createProjectionMatrix(64,4);
+    // auto data = Eigen::VectorXd::Random(1000,1);
+    // clock_t t = clock();
+    // auto dataSym = ArrayXL::Random(1000,1);
+    // cout << dataSym << endl;
+    // for(int i=0; i < 1000; i++) {
         // RPC::calc(proj, data, 100, 0.5);
         // shannonEntropy::calc(dataSym);
         // LZ::calc(dataSym);
         // fractal::sevcik::calc(data);
-    }
-    const double work_time = (clock() - t) / double(CLOCKS_PER_SEC) * 1000;
-    cout << work_time << " ms" << endl;
+    // }
+    // const double work_time = (clock() - t) / double(CLOCKS_PER_SEC) * 1000;
+    // cout << work_time << " ms" << endl;
 
 
     // auto tmp = ei({7,8,9});

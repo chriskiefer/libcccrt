@@ -57,12 +57,6 @@ struct RPC {
       }
       // cout << "p:\n" << projections << endl;
     }
-    // projections = projections.array() - projections.minCoeff();
-    // // cout << "p:\n" << projections << endl;
-    // if (projections.maxCoeff() > 0) {
-    //   projections /=  (projections.maxCoeff() * 1.000001);
-    // }
-    // cout << "p:\n" << projections << endl;
     projections =  projections * resolution;
     // cout << "p:\n" << projections << endl;
     projections =  projections.array().floor();
@@ -71,29 +65,39 @@ struct RPC {
     //flat storage of multidimensional histogram, fill with zeros
     size_t histoSize = pow(resolution,dims);
 
-    // Eigen::Array<bool, Eigen::Dynamic, 1> histo(histoSize);
-    // histo.setConstant(false);
 
-    Eigen::SparseVector<size_t> histo(histoSize);
-  
-    // size_t area=0;
+    // Eigen::SparseVector<size_t> histo(histoSize);
+
+    // // size_t area=0;
+    // for(size_t i=0; i < projections.cols(); i++) {
+    //   Eigen::VectorXd indexTuple = projections.col(i);
+    //   size_t index = RPC::calcXdFlatArrayIndex(indexTuple, resolution);
+    //   // cout << index << endl;
+    //   // histo(index) = true;
+    //   // if (histo.coeffRef(index)==0)
+    //   //   area++;
+    //   histo.coeffRef(index) = 1;
+    //   // histo[index] = 1;
+    // }
+
+
+    // double area = histo.sum();
+    // // cout << "Area: " << area << ", sum: " << histo.sum() << endl;
+    // // return static_cast<double>(histo.size());
+    // return area;
+    
+    std::vector<size_t> indexes(projections.cols());
     for(size_t i=0; i < projections.cols(); i++) {
       Eigen::VectorXd indexTuple = projections.col(i);
       size_t index = RPC::calcXdFlatArrayIndex(indexTuple, resolution);
-      // cout << index << endl;
-      // histo(index) = true;
-      // if (histo.coeffRef(index)==0)
-      //   area++;
-      histo.coeffRef(index) = 1;
+      indexes[i] = index;
     }
+    std::sort(indexes.begin(), indexes.end());
+    auto last = std::unique(indexes.begin(), indexes.end());
+    indexes.erase(last, indexes.end());
+    return static_cast<double>(indexes.size());
 
-    // double area= histo.count() / (double)histoSize;
-    // cout << area << endl;
 
-    // double area = histo.count();
-    double area = histo.sum();
-    // cout << "Area: " << area << ", sum: " << histo.sum() << endl;
-    return area;
   }
 
   static double calc(const Eigen::MatrixXd &projectionMatrix, const Eigen::VectorXd &data, const size_t resolution, double hop=0.5) {
