@@ -4,9 +4,9 @@ A collection of signal analysis functions related to complexity, chaos and causa
 
 Features:
 
-[1] Algorithms for measuring dynamical complexity using Effort to Compress, Lempel-Ziv Complexity, Sevcik Fractal Dimension, Random Projection Complexity
-[2] Python module (3.x)
-[3] SuperCollider UGen for RPC
+* Algorithms for measuring dynamical complexity using Effort to Compress, Lempel-Ziv Complexity, Sevcik Fractal Dimension, Random Projection Complexity
+* Python module (3.x)
+* SuperCollider UGen for RPC
 
 
 
