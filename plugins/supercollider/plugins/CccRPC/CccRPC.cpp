@@ -11,7 +11,7 @@ namespace Ccc {
 CccRPC::CccRPC() {
     double maxWindowSize = in0(IN_MAXWINSIZE); 
     mMaxWindowSize = static_cast<size_t>(maxWindowSize / 1000.0 * sampleRate());
-    ringBuf.setSize(mMaxWindowSize);
+    ringBuf.setSize(mMaxWindowSize + 1);
     proj = RPC::createProjectionMatrix(static_cast<size_t>(in0(IN_HIGHDIM)), static_cast<size_t>(in0(IN_LOWDIM)));
     mCalcFunc = make_calc_function<CccRPC, &CccRPC::next>();
     next(1);
@@ -22,19 +22,19 @@ void CccRPC::next(int nSamples) {
     float* outbuf = out(0);
     double windowSize = in0(IN_WINSIZE); 
     double hopSize = in0(IN_HOPSIZE) * windowSize; 
+    size_t windowSizeInSamples = static_cast<size_t>(windowSize / 1000.0 * sampleRate());
+    size_t hopSizeInSamples = static_cast<size_t>(hopSize / 1000.0 * sampleRate());
+    windowSize = sc_min(windowSizeInSamples, mMaxWindowSize);
+    hopSizeInSamples = sc_min(hopSizeInSamples, mMaxWindowSize);
 
     for (int i = 0; i < nSamples; ++i) {
-        using namespace std;
         ringBuf.push(input[i]);
         hopCounter++;
-        size_t hopSizeInSamples = static_cast<size_t>(hopSize / 1000.0 * sampleRate());
 
-        if (hopCounter >= min(hopSizeInSamples, mMaxWindowSize))
+        if (hopCounter >= hopSizeInSamples)
         {
             hopCounter = 0;
-            size_t windowSizeInSamples =
-                static_cast<size_t>(windowSize / 1000.0 * sampleRate());
-            auto window = ringBuf.getBuffer(min(windowSizeInSamples, mMaxWindowSize));
+            auto window = ringBuf.getBuffer(windowSize);
 
             rpc = RPC::calc(proj, window, in0(IN_RPCRES), in0(IN_RPCHOP));
         }
