@@ -1,5 +1,4 @@
 #include <iostream>
-#include <armadillo>
 #include "gtest/gtest.h"
 #include "shannonEntropy.hpp"
 #include "ETC.hpp"
@@ -13,7 +12,7 @@
 using Eigen::ArrayXi;
 
 using namespace std;
-using namespace arma;
+// using namespace arma;
 
 ArrayXL ei(std::vector<long> v) {
     ArrayXL seq(v.size()); 
