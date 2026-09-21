@@ -18,6 +18,11 @@
 // once per analysis hop. Right outlet: the same value as a float, sent from the
 // scheduler thread after each hop (at most once per signal vector).
 
+// the Max SDK includes <windows.h>, whose min/max macros break std::min/std::max
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+
 #include "ext.h"
 #include "ext_obex.h"
 #include "z_dsp.h"
