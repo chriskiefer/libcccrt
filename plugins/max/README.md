@@ -15,6 +15,18 @@ dependency is the Max SDK.
   `source/max-sdk-base`)
 - macOS: Xcode command line tools. Windows: Visual Studio.
 
+### Building on Windows from scratch
+
+`build-windows.ps1` installs Git, CMake and the Visual Studio 2022 Build Tools
+(C++ workload) via winget, clones max-sdk-base, and builds the external. In an
+elevated PowerShell:
+
+    powershell -ExecutionPolicy Bypass -File plugins\max\build-windows.ps1 -Install
+
+`-Install` copies the result into `Documents\Max 9\Library` (or Max 8). The
+script can also be downloaded on its own and will clone this repository. Run
+with `-SkipToolInstall` if the tools are already present.
+
 ### Building
 
 From the external's directory:
