@@ -10,7 +10,9 @@ if (NOT EXISTS "${MAX_SDK_BASE_PATH}/script/max-pretarget.cmake")
 endif ()
 
 # where the built external goes (must be set before max-pretarget)
-set(C74_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/../externals")
+if (NOT DEFINED C74_LIBRARY_OUTPUT_DIRECTORY)
+	set(C74_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/../externals")
+endif ()
 
 include(${MAX_SDK_BASE_PATH}/script/max-pretarget.cmake)
 

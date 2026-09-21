@@ -15,6 +15,20 @@ dependency is the Max SDK.
   `source/max-sdk-base`)
 - macOS: Xcode command line tools. Windows: Visual Studio.
 
+### Cross-compiling for Windows from Linux/macOS
+
+No Windows machine needed; MinGW-w64 links against the SDK's MSVC import
+libraries fine, and the Max API is plain C so the different C runtime is
+not a problem for these objects.
+
+    sudo apt install g++-mingw-w64-x86-64     # or: brew install mingw-w64
+    plugins/max/build-mingw.sh
+
+This clones max-sdk-base beside the repository if needed and writes
+`cccrpc~.mxe64` to `plugins/max/build-mingw/externals/` (or the directory
+given as the first argument). The result still needs to be tested in Max on
+Windows; the MSVC build via `build-windows.ps1` below is the reference.
+
 ### Building on Windows from scratch
 
 `build-windows.ps1` installs Git, CMake and the Visual Studio 2022 Build Tools
