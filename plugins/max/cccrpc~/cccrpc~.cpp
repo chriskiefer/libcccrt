@@ -13,6 +13,9 @@
 //     @hopsize   : analysis hop as a fraction of winsize (default 0.5)
 //     @res       : histogram resolution per dimension (default 5)
 //     @rpchop    : projection hop as a fraction of highDim (default 0.5)
+//     @downsample: average this many input samples into one before analysis
+//                  (default 1). N times cheaper; the window still spans the
+//                  same time, but RPC then measures the smoothed signal.
 //
 // Signal in. Left outlet: signal holding the most recent RPC value, updated
 // once per analysis hop. Right outlet: the same value as a float, sent from the
@@ -51,6 +54,9 @@ struct CccRpcState {
     std::vector<uint64_t> cellScratch;
     size_t hopCounter = 0;
     double rpc = 0;
+    // downsampling accumulator
+    double accum = 0;
+    size_t accumCount = 0;
 
     CccRpcState(size_t hd, size_t ld, double mw) : highDim(hd), lowDim(ld), maxWinMs(mw) {
         matrix.resize(lowDim * highDim);
@@ -71,6 +77,8 @@ struct CccRpcState {
         cellScratch.assign(maxHops, 0);
         hopCounter = 0;
         rpc = 0;
+        accum = 0;
+        accumCount = 0;
     }
 };
 
@@ -84,6 +92,7 @@ typedef struct _cccrpc {
     double hopsize; // fraction of winsize
     long res;
     double rpchop;
+    long downsample;
 } t_cccrpc;
 
 static t_class* cccrpc_class = nullptr;
@@ -118,6 +127,10 @@ void C74_EXPORT ext_main(void* r) {
     CLASS_ATTR_FILTER_CLIP(c, "rpchop", 0.0, 1.0);
     CLASS_ATTR_LABEL(c, "rpchop", 0, "Projection Hop (fraction of highDim)");
 
+    CLASS_ATTR_LONG(c, "downsample", 0, t_cccrpc, downsample);
+    CLASS_ATTR_FILTER_MIN(c, "downsample", 1);
+    CLASS_ATTR_LABEL(c, "downsample", 0, "Downsample Factor");
+
     class_dspinit(c);
     class_register(CLASS_BOX, c);
     cccrpc_class = c;
@@ -143,6 +156,7 @@ void* cccrpc_new(t_symbol* s, long argc, t_atom* argv) {
     x->hopsize = 0.5;
     x->res = 5;
     x->rpchop = 0.5;
+    x->downsample = 1;
     x->state = new CccRpcState(static_cast<size_t>(highDim), static_cast<size_t>(lowDim), maxWinMs);
 
     dsp_setup((t_pxobject*)x, 1);
@@ -187,10 +201,12 @@ void cccrpc_perform64(t_cccrpc* x, t_object* dsp64, double** ins, long numins, d
     double* out = outs[0];
 
     // read the modulatable parameters once per block, as the UGen does
+    const size_t ds = static_cast<size_t>(std::max<long>(1, x->downsample));
+    const double analysisRate = st.sampleRate / ds; // window/hop are in ms of input time
     const double winMs = x->winsize;
     const double hopMs = x->hopsize * winMs;
-    size_t windowSamples = static_cast<size_t>(winMs / 1000.0 * st.sampleRate);
-    size_t hopSamples = static_cast<size_t>(hopMs / 1000.0 * st.sampleRate);
+    size_t windowSamples = static_cast<size_t>(winMs / 1000.0 * analysisRate);
+    size_t hopSamples = static_cast<size_t>(hopMs / 1000.0 * analysisRate);
     windowSamples = std::min(std::max<size_t>(1, windowSamples), st.maxWindowSamples);
     hopSamples = std::min(std::max<size_t>(1, hopSamples), st.maxWindowSamples);
     const size_t resolution = static_cast<size_t>(std::max<long>(1, x->res));
@@ -198,13 +214,19 @@ void cccrpc_perform64(t_cccrpc* x, t_object* dsp64, double** ins, long numins, d
     bool newValue = false;
 
     for (long i = 0; i < sampleframes; ++i) {
-        st.ring.push(in[i]);
-        if (++st.hopCounter >= hopSamples) {
-            st.hopCounter = 0;
-            st.ring.copyLatest(st.window.data(), windowSamples);
-            st.rpc = cccrt::rpc::calc(st.matrix.data(), st.lowDim, st.highDim, st.window.data(), windowSamples,
-                                      resolution, rpcHop, st.projScratch.data(), st.cellScratch.data());
-            newValue = true;
+        // average ds input samples into one analysis sample
+        st.accum += in[i];
+        if (++st.accumCount >= ds) {
+            st.ring.push(st.accum / static_cast<double>(st.accumCount));
+            st.accum = 0;
+            st.accumCount = 0;
+            if (++st.hopCounter >= hopSamples) {
+                st.hopCounter = 0;
+                st.ring.copyLatest(st.window.data(), windowSamples);
+                st.rpc = cccrt::rpc::calc(st.matrix.data(), st.lowDim, st.highDim, st.window.data(), windowSamples,
+                                          resolution, rpcHop, st.projScratch.data(), st.cellScratch.data());
+                newValue = true;
+            }
         }
         out[i] = st.rpc;
     }

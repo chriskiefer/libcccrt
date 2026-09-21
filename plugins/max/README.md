@@ -63,6 +63,14 @@ These are fixed at creation, as in the SuperCollider UGen.
 | `@hopsize` | 0.5     | analysis hop as a fraction of `winsize`                |
 | `@res`     | 5       | histogram resolution per dimension                     |
 | `@rpchop`  | 0.5     | hop between projection windows, as a fraction of `highDim` |
+| `@downsample` | 1    | average this many input samples into one before analysis   |
+
+`@downsample N` reduces CPU use by a factor of N: the window still spans
+`winsize` milliseconds but holds N times fewer points, so the analysis is N
+times cheaper. Because the samples are averaged (a crude low-pass), RPC then
+measures the complexity of the smoothed signal rather than the raw waveform.
+Raising `@hopsize` is the other way to save CPU: it analyses less often
+without changing what is measured.
 
 Signal in. Two outlets:
 

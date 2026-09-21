@@ -297,10 +297,10 @@
      "patching_rect": [
       250.0,
       285.0,
-      300.0,
-      20.0
+      340.0,
+      33.0
      ],
-     "text": "histogram resolution, projection hop (fraction of highDim)"
+     "text": "histogram resolution, projection hop (fraction of highDim), downsample factor (N x less CPU)"
     }
    },
    {
@@ -433,6 +433,42 @@
       20.0
      ],
      "text": "float outlet: one value per analysis hop"
+    }
+   },
+   {
+    "box": {
+     "id": "obj-m7",
+     "maxclass": "message",
+     "numinlets": 2,
+     "numoutlets": 1,
+     "outlettype": [
+      ""
+     ],
+     "patching_rect": [
+      335.0,
+      260.0,
+      90.0,
+      22.0
+     ],
+     "text": "downsample 1"
+    }
+   },
+   {
+    "box": {
+     "id": "obj-m8",
+     "maxclass": "message",
+     "numinlets": 2,
+     "numoutlets": 1,
+     "outlettype": [
+      ""
+     ],
+     "patching_rect": [
+      435.0,
+      260.0,
+      90.0,
+      22.0
+     ],
+     "text": "downsample 8"
     }
    }
   ],
@@ -589,6 +625,30 @@
      ],
      "destination": [
       "obj-out2",
+      0
+     ]
+    }
+   },
+   {
+    "patchline": {
+     "source": [
+      "obj-m7",
+      0
+     ],
+     "destination": [
+      "obj-rpc",
+      0
+     ]
+    }
+   },
+   {
+    "patchline": {
+     "source": [
+      "obj-m8",
+      0
+     ],
+     "destination": [
+      "obj-rpc",
       0
      ]
     }
