@@ -7,6 +7,7 @@ on microcontrollers (e.g. RP2350) or anywhere Eigen is unwanted.
 * `lz.hpp` — Lempel-Ziv complexity (raw and normalised)
 * `sevcik.hpp` — Sevcik fractal dimension
 * `rpc.hpp` — Random Projection Complexity
+* `ringbuf.hpp` — fixed-capacity ring buffer over caller-owned storage, for feeding windows from an audio callback
 * `cccrt.hpp` — includes all of the above
 
 Effort To Compress and Compression-Complexity Causality are not included; they
@@ -32,6 +33,13 @@ module, SuperCollider UGen and gtest suite all exercise the same code.
 
 ```cpp
 #include "cccrt.hpp"
+
+// collect input into analysis windows
+static float ringStorage[1024];
+static cccrt::RingBuffer<float> ring(ringStorage, 1024);
+static float window[500];
+// per sample: ring.push(x);
+// per hop:    ring.copyLatest(window, 500);
 
 // once, at startup
 static cccrt::rpc::Fixed<float, 2, 32, 64> rpc;   // 2 dims, 32-sample projection window, up to 64 hops

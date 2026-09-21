@@ -7,3 +7,4 @@
 #include "lz.hpp"
 #include "sevcik.hpp"
 #include "rpc.hpp"
+#include "ringbuf.hpp"

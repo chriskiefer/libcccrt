@@ -64,6 +64,25 @@ static void testSevcik() {
     CHECK_NEAR(cccrt::sevcik(sine, 100), 1.1202632289010772, 1e-5);
 }
 
+static void testRingBuffer() {
+    float storage[8];
+    cccrt::RingBuffer<float> ring(storage, 8);
+    float out[8];
+    // before anything is pushed, the buffer reads as zeros
+    ring.copyLatest(out, 3);
+    CHECK_EQ(out[0] + out[1] + out[2], 0);
+    for (int i = 1; i <= 5; ++i) ring.push((float)i);
+    ring.copyLatest(out, 3);            // most recent 3: 3 4 5
+    CHECK_EQ(out[0], 3); CHECK_EQ(out[1], 4); CHECK_EQ(out[2], 5);
+    ring.copyLatest(out, 2, 1);         // skipping the last one: 3 4
+    CHECK_EQ(out[0], 3); CHECK_EQ(out[1], 4);
+    for (int i = 6; i <= 13; ++i) ring.push((float)i);   // wraps around
+    ring.copyLatest(out, 7);            // 7..13
+    for (int i = 0; i < 7; ++i) CHECK_EQ(out[i], 7 + i);
+    ring.copyLatest(out, 4, 3);         // 7..10
+    for (int i = 0; i < 4; ++i) CHECK_EQ(out[i], 7 + i);
+}
+
 static void testRPC() {
     // flat index
     double i1[] = {3};
@@ -118,6 +137,7 @@ int main() {
     testShannon();
     testLZ();
     testSevcik();
+    testRingBuffer();
     testRPC();
     if (failures == 0) std::puts("core tests: all passed");
     else std::printf("core tests: %d failure(s)\n", failures);
