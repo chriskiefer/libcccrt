@@ -41,7 +41,7 @@ endif()
 #find_package(Armadillo REQUIRED)
 #include_directories(${ARMADILLO_INCLUDE_DIRS})
 
-include_directories(eigen-3.4.0 EigenRand)
+include_directories(eigen-3.4.0)
 
 # target_include_directories(
 #   "${eigen_SOURCE_DIR}"
@@ -55,6 +55,10 @@ target_link_libraries(cccrt gtest_main)
 #add_test(NAME example_test COMMAND example)
 
 set_property(TARGET cccrt PROPERTY CXX_STANDARD 17)
+
+# Eigen-free core tests (no gtest, no Eigen)
+add_executable(cccrt_core_test core/tests/core_test.cpp)
+set_property(TARGET cccrt_core_test PROPERTY CXX_STANDARD 17)
 # set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3")
 
 add_custom_target(test COMMAND echo "test")

@@ -66,7 +66,7 @@ endif()
 #################################
 
 # common includes
-include_directories(../../eigen-3.4.0 ../../EigenRand)
+include_directories(../../eigen-3.4.0)
 
 ####################################################################################################
 # Begin target CccRPC

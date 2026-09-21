@@ -5,7 +5,7 @@ project (cccrt)
 
 
 
-include_directories(../eigen-3.4.0 ../EigenRand ..)
+include_directories(../eigen-3.4.0 ..)
 
 add_executable(cccrtbench main.cpp ../shannonEntropy.hpp ../ETC.hpp ../CCC.hpp ../RPC.hpp ../fractal.hpp maximilian.cpp)
 # target_link_libraries(cccrt gtest_main)

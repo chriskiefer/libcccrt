@@ -2,14 +2,16 @@
 
 #include <iostream>
 #include <unordered_map>
+#include <vector>
 #include <cmath>
 #include <Eigen/Dense>
-// using Eigen::ArrayXi;
+#include "core/shannon.hpp"
 using namespace std;
-// using namespace arma;
 using ArrayXL = Eigen::Array<int64_t, Eigen::Dynamic, 1>; 
 
 
+// Eigen-facing wrapper around core/shannon.hpp.
+// The histogram-based functions are kept for ETC, which updates the histogram incrementally.
 struct shannonEntropy {
     
     typedef unordered_map<int64_t, size_t> histoMap;
@@ -39,8 +41,7 @@ struct shannonEntropy {
     }
     
     static double calc(const ArrayXL &seq) {
-        shannonEntropy::histoMap histo = shannonEntropy::calcDistribution(seq);
-        double prob = shannonEntropy::calcProbability(histo, seq);
-        return prob;
+        std::vector<int64_t> scratch(seq.size());
+        return cccrt::shannonEntropy<double>(seq.data(), seq.size(), scratch.data());
     }
 };
