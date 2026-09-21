@@ -61,18 +61,20 @@ in your Max search path (e.g. `~/Documents/Max 8/Library`).
 
 ### cccrpc~
 
-    cccrpc~ [highDim] [lowDim] [maxWinSize]
+    cccrpc~ [highDim] [lowDim] [maxWinSize] [maxLowDim]
 
-| argument     | default | description                                      |
-|--------------|---------|--------------------------------------------------|
-| `highDim`    | 10      | projection window length in samples              |
-| `lowDim`     | 2       | number of projection dimensions                  |
-| `maxWinSize` | 500     | maximum analysis window in ms (sets buffer size) |
+| argument     | default | description                                                  |
+|--------------|---------|--------------------------------------------------------------|
+| `highDim`    | 10      | projection window length in samples (`h` in the paper)       |
+| `lowDim`     | 2       | initial number of projection dimensions (`l`)                |
+| `maxWinSize` | 500     | maximum analysis window in ms (sets buffer size)             |
+| `maxLowDim`  | 8       | upper limit for `@lowdim` (raised to `lowDim` if larger)     |
 
-These are fixed at creation, as in the SuperCollider UGen.
+`highDim`, `maxWinSize` and `maxLowDim` are fixed at creation.
 
 | attribute  | default | description                                            |
 |------------|---------|--------------------------------------------------------|
+| `@lowdim`  | `lowDim` arg | number of projection dimensions, `l` (1 .. `maxLowDim`) |
 | `@winsize` | 25      | analysis window in ms (clamped to `maxWinSize`)        |
 | `@hopsize` | 0.5     | analysis hop as a fraction of `winsize`                |
 | `@res`     | 5       | histogram resolution per dimension                     |
@@ -85,6 +87,13 @@ times cheaper. Because the samples are averaged (a crude low-pass), RPC then
 measures the complexity of the smoothed signal rather than the raw waveform.
 Raising `@hopsize` is the other way to save CPU: it analyses less often
 without changing what is measured.
+
+In the notation of the paper (Kiefer 2023): `h` = `highDim`, `l` =
+`@lowdim`, `alpha` = `@rpchop` × `highDim` samples, `beta` = `@res`.
+
+`@lowdim` can change while running: the projection matrix is generated once
+for `maxLowDim` rows and a projection into `l` dimensions uses its first `l`
+rows, so no reallocation happens on the audio thread.
 
 Signal in. Two outlets:
 

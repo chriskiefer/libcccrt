@@ -58,7 +58,7 @@
       560.0,
       60.0
      ],
-     "text": "Measures the dynamical complexity of a signal by projecting sliding windows through a fixed random matrix and counting the occupied cells of a low-dimensional histogram. Arguments: highDim (projection window, samples), lowDim (projection dimensions), maxWinSize (ms). Kiefer 2023, Sound and Music Computing."
+     "text": "Measures the dynamical complexity of a signal by projecting sliding windows through a fixed random matrix and counting the occupied cells of a low-dimensional histogram. Arguments: highDim (h, projection window in samples), lowDim (l, projection dimensions), maxWinSize (ms), maxLowDim (upper limit for @lowdim). Kiefer 2023, Sound and Music Computing."
     }
    },
    {
@@ -282,10 +282,10 @@
      "patching_rect": [
       250.0,
       170.0,
-      300.0,
+      340.0,
       20.0
      ],
-     "text": "attributes: analysis window (ms), hop (fraction of window),"
+     "text": "attributes: lowdim (l), analysis window (ms), hop (fraction of window),"
     }
    },
    {
@@ -470,6 +470,42 @@
      ],
      "text": "downsample 8"
     }
+   },
+   {
+    "box": {
+     "id": "obj-m9",
+     "maxclass": "message",
+     "numinlets": 2,
+     "numoutlets": 1,
+     "outlettype": [
+      ""
+     ],
+     "patching_rect": [
+      410.0,
+      200.0,
+      55.0,
+      22.0
+     ],
+     "text": "lowdim 2"
+    }
+   },
+   {
+    "box": {
+     "id": "obj-m10",
+     "maxclass": "message",
+     "numinlets": 2,
+     "numoutlets": 1,
+     "outlettype": [
+      ""
+     ],
+     "patching_rect": [
+      475.0,
+      200.0,
+      55.0,
+      22.0
+     ],
+     "text": "lowdim 4"
+    }
    }
   ],
   "lines": [
@@ -645,6 +681,30 @@
     "patchline": {
      "source": [
       "obj-m8",
+      0
+     ],
+     "destination": [
+      "obj-rpc",
+      0
+     ]
+    }
+   },
+   {
+    "patchline": {
+     "source": [
+      "obj-m9",
+      0
+     ],
+     "destination": [
+      "obj-rpc",
+      0
+     ]
+    }
+   },
+   {
+    "patchline": {
+     "source": [
+      "obj-m10",
       0
      ],
      "destination": [

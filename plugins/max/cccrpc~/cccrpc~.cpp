@@ -4,11 +4,16 @@
 // A port of the CccRPC SuperCollider UGen (plugins/supercollider/plugins/CccRPC),
 // built on the Eigen-free core (core/rpc.hpp).
 //
-//   cccrpc~ [highDim] [lowDim] [maxWinSize]
-//     highDim    : projection window length in samples (default 10) - fixed at creation
-//     lowDim     : projection dimensions (default 2)                - fixed at creation
-//     maxWinSize : maximum analysis window in ms (default 500)      - fixed at creation
+// Parameter names follow the SuperCollider UGen; in the paper's notation
+// h = highDim, l = lowDim, alpha = rpchop * highDim (samples), beta = res.
+//
+//   cccrpc~ [highDim] [lowDim] [maxWinSize] [maxLowDim]
+//     highDim    : projection window length in samples, h (default 10) - fixed at creation
+//     lowDim     : initial projection dimensions, l (default 2)
+//     maxWinSize : maximum analysis window in ms (default 500)         - fixed at creation
+//     maxLowDim  : upper limit for @lowdim (default 8, or lowDim if larger) - fixed at creation
 //   attributes
+//     @lowdim    : projection dimensions, l (1 .. maxLowDim)
 //     @winsize   : analysis window in ms (default 25)
 //     @hopsize   : analysis hop as a fraction of winsize (default 0.5)
 //     @res       : histogram resolution per dimension (default 5)
@@ -41,12 +46,14 @@
 // C++ state lives behind a pointer because Max allocates objects with object_alloc (no constructors).
 struct CccRpcState {
     const size_t highDim;
-    const size_t lowDim;
+    const size_t maxLowDim;
     const double maxWinMs;
 
     double sampleRate = 0;
     size_t maxWindowSamples = 0;
-    std::vector<double> matrix; // lowDim x highDim, row-major
+    // maxLowDim x highDim, row-major. A projection into l dimensions uses the
+    // first l rows, so @lowdim can change without touching the matrix.
+    std::vector<double> matrix;
     std::vector<double> ringStorage;
     cccrt::RingBuffer<double> ring;
     std::vector<double> window;
@@ -58,9 +65,9 @@ struct CccRpcState {
     double accum = 0;
     size_t accumCount = 0;
 
-    CccRpcState(size_t hd, size_t ld, double mw) : highDim(hd), lowDim(ld), maxWinMs(mw) {
-        matrix.resize(lowDim * highDim);
-        cccrt::rpc::makeProjectionMatrix(matrix.data(), lowDim, highDim, 42);
+    CccRpcState(size_t hd, size_t maxLd, double mw) : highDim(hd), maxLowDim(maxLd), maxWinMs(mw) {
+        matrix.resize(maxLowDim * highDim);
+        cccrt::rpc::makeProjectionMatrix(matrix.data(), maxLowDim, highDim, 42);
     }
 
     // Called from dsp64 (main thread), so allocation is fine here.
@@ -73,7 +80,7 @@ struct CccRpcState {
         window.assign(maxWindowSamples, 0.0);
         // scratch for the worst case: a projection hop of one sample over the largest window
         const size_t maxHops = std::max<size_t>(1, cccrt::rpc::numHops(maxWindowSamples, highDim, 1));
-        projScratch.assign(lowDim * maxHops, 0.0);
+        projScratch.assign(maxLowDim * maxHops, 0.0);
         cellScratch.assign(maxHops, 0);
         hopCounter = 0;
         rpc = 0;
@@ -88,6 +95,7 @@ typedef struct _cccrpc {
     void* out_float;
     void* clock;   // defers float output from the perform routine to the scheduler
     // attributes
+    long lowdim;
     double winsize; // ms
     double hopsize; // fraction of winsize
     long res;
@@ -110,6 +118,10 @@ void C74_EXPORT ext_main(void* r) {
 
     class_addmethod(c, (method)cccrpc_dsp64, "dsp64", A_CANT, 0);
     class_addmethod(c, (method)cccrpc_assist, "assist", A_CANT, 0);
+
+    CLASS_ATTR_LONG(c, "lowdim", 0, t_cccrpc, lowdim);
+    CLASS_ATTR_FILTER_MIN(c, "lowdim", 1);
+    CLASS_ATTR_LABEL(c, "lowdim", 0, "Projection Dimensions (l)");
 
     CLASS_ATTR_DOUBLE(c, "winsize", 0, t_cccrpc, winsize);
     CLASS_ATTR_FILTER_MIN(c, "winsize", 0.0);
@@ -145,19 +157,23 @@ void* cccrpc_new(t_symbol* s, long argc, t_atom* argv) {
     long highDim = 10;
     long lowDim = 2;
     double maxWinMs = 500.0;
+    long maxLowDim = 8;
     if (nPositional > 0) highDim = atom_getlong(argv);
     if (nPositional > 1) lowDim = atom_getlong(argv + 1);
     if (nPositional > 2) maxWinMs = atom_getfloat(argv + 2);
+    if (nPositional > 3) maxLowDim = atom_getlong(argv + 3);
     highDim = std::max<long>(1, highDim);
     lowDim = std::max<long>(1, lowDim);
     if (maxWinMs <= 0.0) maxWinMs = 500.0;
+    maxLowDim = std::max(std::max<long>(1, maxLowDim), lowDim);
 
+    x->lowdim = lowDim;
     x->winsize = 25.0;
     x->hopsize = 0.5;
     x->res = 5;
     x->rpchop = 0.5;
     x->downsample = 1;
-    x->state = new CccRpcState(static_cast<size_t>(highDim), static_cast<size_t>(lowDim), maxWinMs);
+    x->state = new CccRpcState(static_cast<size_t>(highDim), static_cast<size_t>(maxLowDim), maxWinMs);
 
     dsp_setup((t_pxobject*)x, 1);
     // outlets are created right to left
@@ -211,6 +227,7 @@ void cccrpc_perform64(t_cccrpc* x, t_object* dsp64, double** ins, long numins, d
     hopSamples = std::min(std::max<size_t>(1, hopSamples), st.maxWindowSamples);
     const size_t resolution = static_cast<size_t>(std::max<long>(1, x->res));
     const double rpcHop = x->rpchop;
+    const size_t lowDim = std::min(static_cast<size_t>(std::max<long>(1, x->lowdim)), st.maxLowDim);
     bool newValue = false;
 
     for (long i = 0; i < sampleframes; ++i) {
@@ -223,7 +240,7 @@ void cccrpc_perform64(t_cccrpc* x, t_object* dsp64, double** ins, long numins, d
             if (++st.hopCounter >= hopSamples) {
                 st.hopCounter = 0;
                 st.ring.copyLatest(st.window.data(), windowSamples);
-                st.rpc = cccrt::rpc::calc(st.matrix.data(), st.lowDim, st.highDim, st.window.data(), windowSamples,
+                st.rpc = cccrt::rpc::calc(st.matrix.data(), lowDim, st.highDim, st.window.data(), windowSamples,
                                           resolution, rpcHop, st.projScratch.data(), st.cellScratch.data());
                 newValue = true;
             }
