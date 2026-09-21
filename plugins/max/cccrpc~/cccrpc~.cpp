@@ -14,8 +14,9 @@
 //     @res       : histogram resolution per dimension (default 5)
 //     @rpchop    : projection hop as a fraction of highDim (default 0.5)
 //
-// Signal in, signal out. The output holds the most recent RPC value and is
-// updated once per analysis hop.
+// Signal in. Left outlet: signal holding the most recent RPC value, updated
+// once per analysis hop. Right outlet: the same value as a float, sent from the
+// scheduler thread after each hop (at most once per signal vector).
 
 #include "ext.h"
 #include "ext_obex.h"
@@ -71,6 +72,8 @@ struct CccRpcState {
 typedef struct _cccrpc {
     t_pxobject ob;
     CccRpcState* state;
+    void* out_float;
+    void* clock;   // defers float output from the perform routine to the scheduler
     // attributes
     double winsize; // ms
     double hopsize; // fraction of winsize
@@ -83,6 +86,7 @@ static t_class* cccrpc_class = nullptr;
 void* cccrpc_new(t_symbol* s, long argc, t_atom* argv);
 void cccrpc_free(t_cccrpc* x);
 void cccrpc_assist(t_cccrpc* x, void* b, long m, long a, char* s);
+void cccrpc_tick(t_cccrpc* x);
 void cccrpc_dsp64(t_cccrpc* x, t_object* dsp64, short* count, double samplerate, long maxvectorsize, long flags);
 void cccrpc_perform64(t_cccrpc* x, t_object* dsp64, double** ins, long numins, double** outs, long numouts,
                       long sampleframes, long flags, void* userparam);
@@ -137,13 +141,17 @@ void* cccrpc_new(t_symbol* s, long argc, t_atom* argv) {
     x->state = new CccRpcState(static_cast<size_t>(highDim), static_cast<size_t>(lowDim), maxWinMs);
 
     dsp_setup((t_pxobject*)x, 1);
+    // outlets are created right to left
+    x->out_float = floatout((t_object*)x);
     outlet_new((t_object*)x, "signal");
+    x->clock = clock_new(x, (method)cccrpc_tick);
     attr_args_process(x, (short)argc, argv);
     return x;
 }
 
 void cccrpc_free(t_cccrpc* x) {
     dsp_free((t_pxobject*)x);
+    object_free(x->clock);
     delete x->state;
     x->state = nullptr;
 }
@@ -151,9 +159,15 @@ void cccrpc_free(t_cccrpc* x) {
 void cccrpc_assist(t_cccrpc* x, void* b, long m, long a, char* s) {
     if (m == ASSIST_INLET) {
         snprintf(s, 256, "(signal) Input");
-    } else {
+    } else if (a == 0) {
         snprintf(s, 256, "(signal) Random projection complexity");
+    } else {
+        snprintf(s, 256, "(float) Random projection complexity, once per hop");
     }
+}
+
+void cccrpc_tick(t_cccrpc* x) {
+    outlet_float(x->out_float, x->state->rpc);
 }
 
 void cccrpc_dsp64(t_cccrpc* x, t_object* dsp64, short* count, double samplerate, long maxvectorsize, long flags) {
@@ -176,6 +190,7 @@ void cccrpc_perform64(t_cccrpc* x, t_object* dsp64, double** ins, long numins, d
     hopSamples = std::min(std::max<size_t>(1, hopSamples), st.maxWindowSamples);
     const size_t resolution = static_cast<size_t>(std::max<long>(1, x->res));
     const double rpcHop = x->rpchop;
+    bool newValue = false;
 
     for (long i = 0; i < sampleframes; ++i) {
         st.ring.push(in[i]);
@@ -184,7 +199,9 @@ void cccrpc_perform64(t_cccrpc* x, t_object* dsp64, double** ins, long numins, d
             st.ring.copyLatest(st.window.data(), windowSamples);
             st.rpc = cccrt::rpc::calc(st.matrix.data(), st.lowDim, st.highDim, st.window.data(), windowSamples,
                                       resolution, rpcHop, st.projScratch.data(), st.cellScratch.data());
+            newValue = true;
         }
         out[i] = st.rpc;
     }
+    if (newValue) clock_delay(x->clock, 0);
 }

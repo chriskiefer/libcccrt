@@ -64,9 +64,13 @@ These are fixed at creation, as in the SuperCollider UGen.
 | `@res`     | 5       | histogram resolution per dimension                     |
 | `@rpchop`  | 0.5     | hop between projection windows, as a fraction of `highDim` |
 
-Signal in, signal out. The output holds the latest complexity value (the
-number of occupied histogram cells) and updates once per analysis hop; use
-`snapshot~` to read it as a float.
+Signal in. Two outlets:
+
+* left, signal — holds the latest complexity value (the number of occupied
+  histogram cells), updated once per analysis hop
+* right, float — the same value sent as a message after each hop (at most once
+  per signal vector, so with hops shorter than the vector size only the last
+  value in each vector is sent)
 
 The projection matrix is generated with a fixed seed, so an object with the
 same arguments always uses the same matrix. It is not the same matrix as the

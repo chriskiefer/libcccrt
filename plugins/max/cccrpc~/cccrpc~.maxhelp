@@ -308,7 +308,7 @@
      "id": "obj-rpc",
      "maxclass": "newobj",
      "numinlets": 1,
-     "numoutlets": 1,
+     "numoutlets": 2,
      "patching_rect": [
       30.0,
       320.0,
@@ -317,7 +317,8 @@
      ],
      "text": "cccrpc~ 10 2 500",
      "outlettype": [
-      "signal"
+      "signal",
+      "float"
      ]
     }
    },
@@ -366,10 +367,10 @@
      "patching_rect": [
       100.0,
       395.0,
-      300.0,
+      180.0,
       20.0
      ],
-     "text": "complexity (number of occupied histogram cells)"
+     "text": "signal outlet via snapshot~"
     }
    },
    {
@@ -399,6 +400,39 @@
       20.0
      ],
      "text": "turn audio on"
+    }
+   },
+   {
+    "box": {
+     "id": "obj-out2",
+     "maxclass": "flonum",
+     "numinlets": 1,
+     "numoutlets": 2,
+     "outlettype": [
+      "",
+      "bang"
+     ],
+     "patching_rect": [
+      160.0,
+      360.0,
+      60.0,
+      22.0
+     ]
+    }
+   },
+   {
+    "box": {
+     "id": "obj-c7",
+     "maxclass": "comment",
+     "numinlets": 1,
+     "numoutlets": 0,
+     "patching_rect": [
+      225.0,
+      360.0,
+      260.0,
+      20.0
+     ],
+     "text": "float outlet: one value per analysis hop"
     }
    }
   ],
@@ -543,6 +577,18 @@
      ],
      "destination": [
       "obj-out",
+      0
+     ]
+    }
+   },
+   {
+    "patchline": {
+     "source": [
+      "obj-rpc",
+      1
+     ],
+     "destination": [
+      "obj-out2",
       0
      ]
     }
