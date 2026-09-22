@@ -100,6 +100,10 @@ double randomProjectionComplexity(const Eigen::Ref<Eigen::MatrixXd> &projectionM
   // return 0;
 }
 
+double randomProjectionComplexityMax(const Eigen::Ref<Eigen::MatrixXd> &projectionMatrix, const size_t dataLength, const size_t resolution, const double hop=0.5) {
+  return RPC::maxCells(projectionMatrix, dataLength, resolution, hop);
+}
+
 double sevcik(const Eigen::Ref<Eigen::VectorXd> v) {
   return fractal::sevcik::calc(v);
   
@@ -118,5 +122,6 @@ PYBIND11_MODULE(cccrt, m) {
     m.def("shannonEntropy", &shannonEntropy, "Calculates shannon entropy on an array of symbols");
     m.def("createRPMatrix", &RPC::createProjectionMatrix, py::return_value_policy::reference_internal);
     m.def("RPC", &randomProjectionComplexity, "Random projection complexity");
+    m.def("RPCMax", &randomProjectionComplexityMax, "Upper bound of RPC for a projection matrix, data length, resolution and hop; divide RPC by this to normalise to [0, 1]");
     m.def("sevcik", &sevcik, "Sevcik fractal complexity");
 }

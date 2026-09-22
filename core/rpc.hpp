@@ -72,6 +72,15 @@ inline size_t numHops(size_t n, size_t windowSize, size_t hopSize) {
     return n < windowSize ? 0 : ((n - windowSize) / hopSize) + 1;
 }
 
+// Upper bound on the value calc() can return for these parameters: each hop
+// occupies at most one cell, and there are resolution^nDim cells. Useful for
+// normalising the output to [0, 1].
+inline double maxOccupiedCells(size_t n, size_t windowSize, double hop, size_t resolution, size_t nDim) {
+    const double nHops = static_cast<double>(numHops(n, windowSize, hopSizeInSamples(windowSize, hop)));
+    const double nCells = std::pow(static_cast<double>(resolution), static_cast<double>(nDim));
+    return std::min(nHops, nCells);
+}
+
 // Flatten a multidimensional histogram bin index.
 template <typename Idx>
 uint64_t flatIndex(const Idx* tuple, size_t dims, size_t bound) {

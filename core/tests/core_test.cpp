@@ -106,6 +106,11 @@ static void testRPC() {
     cccrt::rpc::makeProjectionMatrix(m2, 4, 2000);
     CHECK_EQ(m[123], m2[123]);
 
+    // normalisation bound: min(hops, res^dims)
+    CHECK_EQ(cccrt::rpc::maxOccupiedCells(100, 4, 0.5, 5, 2), 25);     // 49 hops, 25 cells
+    CHECK_EQ(cccrt::rpc::maxOccupiedCells(100, 4, 0.5, 100, 1), 49);   // 49 hops, 100 cells
+    CHECK_EQ(cccrt::rpc::maxOccupiedCells(3, 4, 0.5, 5, 2), 0);        // shorter than the window
+
     // same bounds as RPCProjectionTest in main.cpp
     cccrt::rpc::Fixed<float, 3, 16, 128> rpc;
     if (!rpc.init(2, 4)) { std::puts("FAIL: rpc.init"); ++failures; }

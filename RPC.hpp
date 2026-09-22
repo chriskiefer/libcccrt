@@ -19,6 +19,11 @@ struct RPC {
     return cccrt::rpc::flatIndex(indexTuple.data(), indexTuple.size(), bound);
   }
 
+  // upper bound of calc() for these parameters, for normalising to [0, 1]
+  static double maxCells(const Eigen::MatrixXd &projectionMatrix, size_t dataLength, const size_t resolution, double hop=0.5) {
+    return cccrt::rpc::maxOccupiedCells(dataLength, projectionMatrix.cols(), hop, resolution, projectionMatrix.rows());
+  }
+
   static double calc(const Eigen::MatrixXd &projectionMatrix, const Eigen::VectorXd &data, const size_t resolution, double hop=0.5) {
     const size_t nDim = projectionMatrix.rows();
     const size_t windowSize = projectionMatrix.cols();

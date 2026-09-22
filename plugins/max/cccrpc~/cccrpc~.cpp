@@ -21,6 +21,10 @@
 //     @downsample: average this many input samples into one before analysis
 //                  (default 1). N times cheaper; the window still spans the
 //                  same time, but RPC then measures the smoothed signal.
+//     @normalize : 0 = raw cell count (default)
+//                  1 = divided by the maximum possible count, min(hops, res^l)
+//                  2 = divided by the mean count for white noise with the
+//                      current parameters (recalibrated when they change)
 //
 // Signal in. Left outlet: signal holding the most recent RPC value, updated
 // once per analysis hop. Right outlet: the same value as a float, sent from the
@@ -60,10 +64,16 @@ struct CccRpcState {
     std::vector<double> projScratch;
     std::vector<uint64_t> cellScratch;
     size_t hopCounter = 0;
-    double rpc = 0;
+    double rpc = 0;      // raw cell count
+    double output = 0;   // rpc after normalisation
     // downsampling accumulator
     double accum = 0;
     size_t accumCount = 0;
+    // noise calibration (@normalize 2), computed on the main thread with its own scratch
+    double noiseRef = 1;
+    std::vector<double> calibWindow;
+    std::vector<double> calibProj;
+    std::vector<uint64_t> calibCells;
 
     CccRpcState(size_t hd, size_t maxLd, double mw) : highDim(hd), maxLowDim(maxLd), maxWinMs(mw) {
         matrix.resize(maxLowDim * highDim);
@@ -82,8 +92,12 @@ struct CccRpcState {
         const size_t maxHops = std::max<size_t>(1, cccrt::rpc::numHops(maxWindowSamples, highDim, 1));
         projScratch.assign(maxLowDim * maxHops, 0.0);
         cellScratch.assign(maxHops, 0);
+        calibWindow.assign(maxWindowSamples, 0.0);
+        calibProj.assign(maxLowDim * maxHops, 0.0);
+        calibCells.assign(maxHops, 0);
         hopCounter = 0;
         rpc = 0;
+        output = 0;
         accum = 0;
         accumCount = 0;
     }
@@ -94,7 +108,9 @@ typedef struct _cccrpc {
     CccRpcState* state;
     void* out_float;
     void* clock;   // defers float output from the perform routine to the scheduler
+    void* calibQelem; // runs noise calibration on the main thread after a parameter change
     // attributes
+    long normalize;
     long lowdim;
     double winsize; // ms
     double hopsize; // fraction of winsize
@@ -105,7 +121,36 @@ typedef struct _cccrpc {
 
 static t_class* cccrpc_class = nullptr;
 
+// the analysis parameters derived from the attributes, shared by the perform routine and calibration
+struct AnalysisParams {
+    size_t ds;
+    size_t windowSamples;
+    size_t hopSamples;
+    size_t resolution;
+    size_t lowDim;
+    double rpcHop;
+};
+
+static AnalysisParams cccrpc_params(const t_cccrpc* x) {
+    const CccRpcState& st = *x->state;
+    AnalysisParams p;
+    p.ds = static_cast<size_t>(std::max<long>(1, x->downsample));
+    const double analysisRate = st.sampleRate / p.ds; // window/hop are in ms of input time
+    const double winMs = x->winsize;
+    const double hopMs = x->hopsize * winMs;
+    p.windowSamples = static_cast<size_t>(winMs / 1000.0 * analysisRate);
+    p.hopSamples = static_cast<size_t>(hopMs / 1000.0 * analysisRate);
+    p.windowSamples = std::min(std::max<size_t>(1, p.windowSamples), st.maxWindowSamples);
+    p.hopSamples = std::min(std::max<size_t>(1, p.hopSamples), st.maxWindowSamples);
+    p.resolution = static_cast<size_t>(std::max<long>(1, x->res));
+    p.lowDim = std::min(static_cast<size_t>(std::max<long>(1, x->lowdim)), st.maxLowDim);
+    p.rpcHop = x->rpchop;
+    return p;
+}
+
 void* cccrpc_new(t_symbol* s, long argc, t_atom* argv);
+void cccrpc_calibrate(t_cccrpc* x);
+t_max_err cccrpc_attr_set(t_cccrpc* x, t_object* attr, long argc, t_atom* argv);
 void cccrpc_free(t_cccrpc* x);
 void cccrpc_assist(t_cccrpc* x, void* b, long m, long a, char* s);
 void cccrpc_tick(t_cccrpc* x);
@@ -118,6 +163,11 @@ void C74_EXPORT ext_main(void* r) {
 
     class_addmethod(c, (method)cccrpc_dsp64, "dsp64", A_CANT, 0);
     class_addmethod(c, (method)cccrpc_assist, "assist", A_CANT, 0);
+
+    CLASS_ATTR_LONG(c, "normalize", 0, t_cccrpc, normalize);
+    CLASS_ATTR_FILTER_CLIP(c, "normalize", 0, 2);
+    CLASS_ATTR_ENUMINDEX3(c, "normalize", 0, "Raw", "Maximum", "White Noise");
+    CLASS_ATTR_LABEL(c, "normalize", 0, "Normalize Output");
 
     CLASS_ATTR_LONG(c, "lowdim", 0, t_cccrpc, lowdim);
     CLASS_ATTR_FILTER_MIN(c, "lowdim", 1);
@@ -143,6 +193,11 @@ void C74_EXPORT ext_main(void* r) {
     CLASS_ATTR_FILTER_MIN(c, "downsample", 1);
     CLASS_ATTR_LABEL(c, "downsample", 0, "Downsample Factor");
 
+    // every analysis parameter change re-runs the noise calibration
+    for (const char* name : {"lowdim", "winsize", "hopsize", "res", "rpchop", "downsample"}) {
+        CLASS_ATTR_ACCESSORS(c, name, NULL, cccrpc_attr_set);
+    }
+
     class_dspinit(c);
     class_register(CLASS_BOX, c);
     cccrpc_class = c;
@@ -167,6 +222,7 @@ void* cccrpc_new(t_symbol* s, long argc, t_atom* argv) {
     if (maxWinMs <= 0.0) maxWinMs = 500.0;
     maxLowDim = std::max(std::max<long>(1, maxLowDim), lowDim);
 
+    x->normalize = 0;
     x->lowdim = lowDim;
     x->winsize = 25.0;
     x->hopsize = 0.5;
@@ -180,6 +236,7 @@ void* cccrpc_new(t_symbol* s, long argc, t_atom* argv) {
     x->out_float = floatout((t_object*)x);
     outlet_new((t_object*)x, "signal");
     x->clock = clock_new(x, (method)cccrpc_tick);
+    x->calibQelem = qelem_new(x, (method)cccrpc_calibrate);
     attr_args_process(x, (short)argc, argv);
     return x;
 }
@@ -187,6 +244,7 @@ void* cccrpc_new(t_symbol* s, long argc, t_atom* argv) {
 void cccrpc_free(t_cccrpc* x) {
     dsp_free((t_pxobject*)x);
     object_free(x->clock);
+    qelem_free(x->calibQelem);
     delete x->state;
     x->state = nullptr;
 }
@@ -202,11 +260,43 @@ void cccrpc_assist(t_cccrpc* x, void* b, long m, long a, char* s) {
 }
 
 void cccrpc_tick(t_cccrpc* x) {
-    outlet_float(x->out_float, x->state->rpc);
+    outlet_float(x->out_float, x->state->output);
+}
+
+// shared setter for the analysis attributes: store the value, then recalibrate
+t_max_err cccrpc_attr_set(t_cccrpc* x, t_object* attr, long argc, t_atom* argv) {
+    if (argc < 1 || !argv) return MAX_ERR_NONE;
+    t_symbol* name = (t_symbol*)object_method(attr, gensym("getname"));
+    if (name == gensym("lowdim")) x->lowdim = std::max<long>(1, atom_getlong(argv));
+    else if (name == gensym("winsize")) x->winsize = std::max(0.0, atom_getfloat(argv));
+    else if (name == gensym("hopsize")) x->hopsize = std::max(0.0, atom_getfloat(argv));
+    else if (name == gensym("res")) x->res = std::max<long>(1, atom_getlong(argv));
+    else if (name == gensym("rpchop")) x->rpchop = std::min(1.0, std::max(0.0, atom_getfloat(argv)));
+    else if (name == gensym("downsample")) x->downsample = std::max<long>(1, atom_getlong(argv));
+    if (x->calibQelem) qelem_set(x->calibQelem);
+    return MAX_ERR_NONE;
+}
+
+// Reference value for @normalize 2: mean RPC of white noise windows with the
+// current parameters. Runs on the main thread (qelem / dsp64) with its own scratch.
+void cccrpc_calibrate(t_cccrpc* x) {
+    CccRpcState& st = *x->state;
+    if (st.sampleRate <= 0 || st.calibWindow.empty()) return; // dsp64 will calibrate once it knows the sample rate
+    const AnalysisParams p = cccrpc_params(x);
+    cccrt::rpc::Pcg32 rng(1234); // fixed seed: the same parameters always give the same reference
+    const int nWindows = 8;
+    double sum = 0;
+    for (int w = 0; w < nWindows; ++w) {
+        for (size_t i = 0; i < p.windowSamples; ++i) st.calibWindow[i] = rng.uniform01<double>() * 2.0 - 1.0;
+        sum += cccrt::rpc::calc(st.matrix.data(), p.lowDim, st.highDim, st.calibWindow.data(), p.windowSamples,
+                                p.resolution, p.rpcHop, st.calibProj.data(), st.calibCells.data());
+    }
+    st.noiseRef = std::max(1.0, sum / nWindows);
 }
 
 void cccrpc_dsp64(t_cccrpc* x, t_object* dsp64, short* count, double samplerate, long maxvectorsize, long flags) {
     x->state->prepare(samplerate);
+    cccrpc_calibrate(x);
     object_method(dsp64, gensym("dsp_add64"), x, cccrpc_perform64, 0, NULL);
 }
 
@@ -217,17 +307,14 @@ void cccrpc_perform64(t_cccrpc* x, t_object* dsp64, double** ins, long numins, d
     double* out = outs[0];
 
     // read the modulatable parameters once per block, as the UGen does
-    const size_t ds = static_cast<size_t>(std::max<long>(1, x->downsample));
-    const double analysisRate = st.sampleRate / ds; // window/hop are in ms of input time
-    const double winMs = x->winsize;
-    const double hopMs = x->hopsize * winMs;
-    size_t windowSamples = static_cast<size_t>(winMs / 1000.0 * analysisRate);
-    size_t hopSamples = static_cast<size_t>(hopMs / 1000.0 * analysisRate);
-    windowSamples = std::min(std::max<size_t>(1, windowSamples), st.maxWindowSamples);
-    hopSamples = std::min(std::max<size_t>(1, hopSamples), st.maxWindowSamples);
-    const size_t resolution = static_cast<size_t>(std::max<long>(1, x->res));
-    const double rpcHop = x->rpchop;
-    const size_t lowDim = std::min(static_cast<size_t>(std::max<long>(1, x->lowdim)), st.maxLowDim);
+    const AnalysisParams p = cccrpc_params(x);
+    const size_t ds = p.ds;
+    const size_t windowSamples = p.windowSamples;
+    const size_t hopSamples = p.hopSamples;
+    const size_t resolution = p.resolution;
+    const double rpcHop = p.rpcHop;
+    const size_t lowDim = p.lowDim;
+    const long normalize = x->normalize;
     bool newValue = false;
 
     for (long i = 0; i < sampleframes; ++i) {
@@ -242,10 +329,18 @@ void cccrpc_perform64(t_cccrpc* x, t_object* dsp64, double** ins, long numins, d
                 st.ring.copyLatest(st.window.data(), windowSamples);
                 st.rpc = cccrt::rpc::calc(st.matrix.data(), lowDim, st.highDim, st.window.data(), windowSamples,
                                           resolution, rpcHop, st.projScratch.data(), st.cellScratch.data());
+                if (normalize == 1) {
+                    const double mx = cccrt::rpc::maxOccupiedCells(windowSamples, st.highDim, rpcHop, resolution, lowDim);
+                    st.output = mx > 0 ? st.rpc / mx : 0;
+                } else if (normalize == 2) {
+                    st.output = st.rpc / st.noiseRef;
+                } else {
+                    st.output = st.rpc;
+                }
                 newValue = true;
             }
         }
-        out[i] = st.rpc;
+        out[i] = st.output;
     }
     if (newValue) clock_delay(x->clock, 0);
 }

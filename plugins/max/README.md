@@ -80,6 +80,7 @@ in your Max search path (e.g. `~/Documents/Max 8/Library`).
 | `@res`     | 5       | histogram resolution per dimension                     |
 | `@rpchop`  | 0.5     | hop between projection windows, as a fraction of `highDim` |
 | `@downsample` | 1    | average this many input samples into one before analysis   |
+| `@normalize` | 0     | output scaling: 0 raw, 1 by the maximum possible, 2 by white noise |
 
 `@downsample N` reduces CPU use by a factor of N: the window still spans
 `winsize` milliseconds but holds N times fewer points, so the analysis is N
@@ -87,6 +88,28 @@ times cheaper. Because the samples are averaged (a crude low-pass), RPC then
 measures the complexity of the smoothed signal rather than the raw waveform.
 Raising `@hopsize` is the other way to save CPU: it analyses less often
 without changing what is measured.
+
+#### Output range and `@normalize`
+
+The raw output is a count of occupied histogram cells, whose ceiling depends
+on the parameters: each projection hop occupies at most one cell and there
+are `res^lowdim` cells, so the maximum is `min(hops, res^lowdim)` where
+`hops = floor((windowSamples - highDim) / (rpchop * highDim)) + 1`.
+
+* `@normalize 1` divides by that maximum, giving `[0, 1]`. Deterministic, but
+  the top of the range is not always reachable: with many bins and few hops
+  even white noise leaves cells empty.
+* `@normalize 2` divides by the mean RPC of white noise analysed with the
+  current parameters, so noise reads about 1 whatever the settings (single
+  windows can read a little above 1). The reference is recomputed on the main
+  thread whenever an analysis attribute changes; it costs eight extra analyses
+  and never runs on the audio thread.
+
+Neither makes the *low* end parameter-independent: a sine occupies a curve of
+roughly `res` cells however many cells there are, so its normalised value
+falls as `res` grows. That is the metric's sensitivity control, so expect to
+scale the output in the patch for a given parameter set; normalisation just
+stops the range jumping when parameters change.
 
 In the notation of the paper (Kiefer 2023): `h` = `highDim`, `l` =
 `@lowdim`, `alpha` = `@rpchop` × `highDim` samples, `beta` = `@res`.
