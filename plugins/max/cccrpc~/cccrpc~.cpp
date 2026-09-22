@@ -9,14 +9,21 @@
 //
 //   cccrpc~ [highDim] [lowDim] [maxWinSize] [maxLowDim]
 //     highDim    : projection window length in samples, h (default 10) - fixed at creation
-//     lowDim     : initial projection dimensions, l (default 2)
+//     lowDim     : initial projection dimensions, l (default 4)
 //     maxWinSize : maximum analysis window in ms (default 500)         - fixed at creation
 //     maxLowDim  : upper limit for @lowdim (default 8, or lowDim if larger) - fixed at creation
 //   attributes
 //     @lowdim    : projection dimensions, l (1 .. maxLowDim)
 //     @winsize   : analysis window in ms (default 25)
 //     @hopsize   : analysis hop as a fraction of winsize (default 0.5)
-//     @res       : histogram resolution per dimension (default 5)
+//     @res       : histogram resolution per dimension (default 10)
+//
+// On res and lowdim: the output is capped at min(hops, res^lowdim) occupied
+// cells. The defaults give 10^4 cells against a few hundred hops, so the hop
+// count is the limit and the measure keeps discriminating at the top of its
+// range. Lowering them (e.g. res 5, lowdim 2 = 25 cells) saturates on
+// broadband material, where it shows up as the output going deaf to high
+// frequencies - the value has already hit the ceiling.
 //     @rpchop    : projection hop as a fraction of highDim (default 0.5)
 //     @downsample: average this many input samples into one before analysis
 //                  (default 1). N times cheaper; the window still spans the
@@ -210,7 +217,7 @@ void* cccrpc_new(t_symbol* s, long argc, t_atom* argv) {
     // positional args, then attributes
     const long nPositional = attr_args_offset((short)argc, argv);
     long highDim = 10;
-    long lowDim = 2;
+    long lowDim = 4;
     double maxWinMs = 500.0;
     long maxLowDim = 8;
     if (nPositional > 0) highDim = atom_getlong(argv);
@@ -226,7 +233,7 @@ void* cccrpc_new(t_symbol* s, long argc, t_atom* argv) {
     x->lowdim = lowDim;
     x->winsize = 25.0;
     x->hopsize = 0.5;
-    x->res = 5;
+    x->res = 10;
     x->rpchop = 0.5;
     x->downsample = 1;
     x->state = new CccRpcState(static_cast<size_t>(highDim), static_cast<size_t>(maxLowDim), maxWinMs);

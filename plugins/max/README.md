@@ -124,7 +124,7 @@ your Max search path (e.g. `~/Documents/Max 8/Library`). For `cccrpc` also copy
 | argument     | default | description                                                  |
 |--------------|---------|--------------------------------------------------------------|
 | `highDim`    | 10      | projection window length in samples (`h` in the paper)       |
-| `lowDim`     | 2       | initial number of projection dimensions (`l`)                |
+| `lowDim`     | 4       | initial number of projection dimensions (`l`)                |
 | `maxWinSize` | 500     | maximum analysis window in ms (sets buffer size)             |
 | `maxLowDim`  | 8       | upper limit for `@lowdim` (raised to `lowDim` if larger)     |
 
@@ -135,7 +135,7 @@ your Max search path (e.g. `~/Documents/Max 8/Library`). For `cccrpc` also copy
 | `@lowdim`  | `lowDim` arg | number of projection dimensions, `l` (1 .. `maxLowDim`) |
 | `@winsize` | 25      | analysis window in ms (clamped to `maxWinSize`)        |
 | `@hopsize` | 0.5     | analysis hop as a fraction of `winsize`                |
-| `@res`     | 5       | histogram resolution per dimension                     |
+| `@res`     | 10      | histogram resolution per dimension                     |
 | `@rpchop`  | 0.5     | hop between projection windows, as a fraction of `highDim` |
 | `@downsample` | 1    | average this many input samples into one before analysis   |
 | `@normalize` | 0     | output scaling: 0 raw, 1 by the maximum possible, 2 by white noise |
@@ -171,6 +171,31 @@ stops the range jumping when parameters change.
 
 In the notation of the paper (Kiefer 2023): `h` = `highDim`, `l` =
 `@lowdim`, `alpha` = `@rpchop` × `highDim` samples, `beta` = `@res`.
+
+#### Keeping the output out of the ceiling
+
+The output cannot exceed `min(hops, res^lowdim)`, where
+`hops = (windowSamples - highDim) / (rpchop * highDim) + 1`. Keep
+`res^lowdim` comfortably above the hop count so the hop count is the limit;
+the defaults (`res 10`, `lowdim 4`) give 10,000 cells against a few hundred
+hops. With a small cell count the measure saturates on broadband material,
+which is felt as the output not responding to high-frequency content — it has
+simply run out of cells. Measured on white noise low-passed at a sweeping
+cutoff, 25 ms window:
+
+| low-pass cutoff (Hz)        | 250 | 500 | 1000 | 2000 | 4000 | 8000 | 16000 | ceiling |
+|-----------------------------|-----|-----|------|------|------|------|-------|---------|
+| `res 5`, `lowdim 2` (old)   |  13 |  15 |   20 |   24 |   24 |   23 |    21 |      25 |
+| `res 10`, `lowdim 4` (now)  | 115 | 142 |  183 |  198 |  205 |  205 |   207 |     219 |
+| plus `@downsample 8`        |  26 |  26 |   25 |   24 |   25 |   25 |    24 |      26 |
+
+Two further things reduce high-frequency sensitivity: `@rpchop` sets the
+projection hop `rpchop * highDim` in samples, so the projection sequence is
+sampled at `sr / (rpchop * highDim)` and content above half that folds rather
+than adding structure (use `@rpchop 0.25` or lower if HF matters); and
+`@downsample N` is a boxcar low-pass with its first null at `sr / N`, so it
+removes HF before analysis and shortens the window — prefer a larger
+`@hopsize` for saving CPU when high frequencies matter.
 
 `@lowdim` can change while running: the projection matrix is generated once
 for `maxLowDim` rows and a projection into `l` dimensions uses its first `l`

@@ -231,7 +231,7 @@
       45.0,
       22.0
      ],
-     "text": "res 5",
+     "text": "res 10",
      "outlettype": [
       ""
      ]
@@ -486,7 +486,7 @@
       55.0,
       22.0
      ],
-     "text": "lowdim 2"
+     "text": "lowdim 4"
     }
    },
    {
