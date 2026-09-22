@@ -22,7 +22,7 @@ out="${1:-$here/build-mingw/externals}"
 mkdir -p "$out"
 out="$(cd "$out" && pwd)"
 
-for ext in "cccrpc~"; do
+for ext in "cccrpc~" "cccrpc"; do
     build="$here/build-mingw/$ext"
     cmake -S "$here/$ext" -B "$build" \
         -DCMAKE_TOOLCHAIN_FILE="$here/toolchain-mingw-w64.cmake" \

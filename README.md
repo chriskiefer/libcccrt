@@ -7,7 +7,7 @@ Features:
 * Algorithms for measuring dynamical complexity using Effort to Compress, Lempel-Ziv Complexity, Sevcik Fractal Dimension, Random Projection Complexity
 * Python module (3.x)
 * SuperCollider UGen for RPC
-* Max/MSP external for RPC (`cccrpc~`, see [plugins/max/README.md](plugins/max/README.md))
+* Max/MSP externals for RPC: `cccrpc~` (signal) and `cccrpc` (frames, lists, FFT spectra) — see [plugins/max/README.md](plugins/max/README.md)
 * Eigen-free `core/` headers for embedded targets (RP2350 etc.) covering Shannon entropy, Lempel-Ziv, Sevcik and RPC — see [core/README.md](core/README.md)
 
 

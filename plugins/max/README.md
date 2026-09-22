@@ -2,7 +2,9 @@
 
 Author: Chris Kiefer
 
-* `cccrpc~` — Random Projection Complexity, a port of the `CccRPC` SuperCollider UGen
+* `cccrpc~` — Random Projection Complexity of a sliding window of a signal
+* `cccrpc` — Random Projection Complexity of one frame: a list, or a `buffer~`
+  (e.g. an FFT magnitude spectrum)
 
 The externals are built on the Eigen-free `core/` headers, so the only
 dependency is the Max SDK.
@@ -29,6 +31,61 @@ This clones max-sdk-base beside the repository if needed and writes
 given as the first argument). The result still needs to be tested in Max on
 Windows; the MSVC build via `build-windows.ps1` below is the reference.
 
+### cccrpc — frames, lists and spectra
+
+    cccrpc [highDim] [lowDim] [maxFrame] [maxLowDim]
+
+Analyses one complete frame and outputs a single value: send a `list`, or set
+`@buffer <name>` and send a `bang` to analyse a `buffer~`. The left outlet is
+the complexity, the right outlet the number of values actually analysed.
+
+| argument    | default | description                                          |
+|-------------|---------|------------------------------------------------------|
+| `highDim`   | 16      | projection window length in values (`h`)             |
+| `lowDim`    | 2       | initial projection dimensions (`l`)                  |
+| `maxFrame`  | 4096    | longest frame accepted, in values                    |
+| `maxLowDim` | 8       | upper limit for `@lowdim`                            |
+
+`@lowdim`, `@res`, `@rpchop` and `@normalize` work as in `cccrpc~` (in
+`@normalize 2` the reference is a random frame of the same length). Frame
+preparation adds:
+
+| attribute   | default | description                                                    |
+|-------------|---------|-----------------------------------------------------------------|
+| `@buffer`   | —       | `buffer~` to read on `bang` (channel 1)                         |
+| `@skip`     | 0       | ignore this many values at the start (use 1 to drop an FFT DC bin) |
+| `@bins`     | 0       | use at most this many values after `@skip` (0 = all)            |
+| `@logmag`   | 0       | convert values to dB before analysis                            |
+| `@dbfloor`  | -120    | floor for `@logmag`                                             |
+
+#### Analysing FFT spectra
+
+Fed a magnitude spectrum, RPC slides its projection window along the
+**frequency** axis: `highDim` is a number of adjacent bins and `@rpchop` a bin
+hop. Regular spectral structure (a harmonic series) projects onto the same
+histogram cells repeatedly and scores low; dense or noisy spectra score high.
+Measured on 1024-point spectra (`h` 16, `l` 2, `res` 10, DC bin skipped):
+
+| signal                  | linear magnitude | dB (`@logmag 1`) |
+|-------------------------|------------------|------------------|
+| sine                    | 2                | 11               |
+| 10 harmonics            | 7                | 13               |
+| 10 inharmonic partials  | 14               | 18               |
+| harmonics + noise       | 10               | 35               |
+| white noise             | 38               | 36               |
+
+`@logmag` is not simply "better": in dB the noise floor becomes visible
+structure, so the measure reports how *noisy* the spectrum is (harmonics+noise
+reads like noise). On linear magnitudes the measure follows the prominent
+peaks instead and barely notices the noise floor. Pick whichever question is
+being asked.
+
+`cccrpc.maxhelp` has a working example: `pfft~` runs `cccrpc-spectrum.maxpat`,
+which writes each magnitude spectrum into `buffer~ spectrum` with `poke~`, and
+a `metro` bangs `cccrpc` to analyse it. Note that a `buffer~` is usually longer
+than the spectrum written into it, so `@bins` should be set to the bin count
+(511 after skipping DC, for a 1024-point FFT).
+
 ### Building on Windows from scratch
 
 `build-windows.ps1` installs Git, CMake and the Visual Studio 2022 Build Tools
@@ -45,7 +102,7 @@ with `-SkipToolInstall` if the tools are already present.
 
 From the external's directory:
 
-    cd plugins/max/cccrpc~
+    cd plugins/max/cccrpc~        # or plugins/max/cccrpc
     mkdir build && cd build
     cmake .. -DMAX_SDK_BASE_PATH=/path/to/max-sdk-base
     cmake --build . --config Release
@@ -56,8 +113,9 @@ On macOS pass `-DCMAKE_OSX_ARCHITECTURES="arm64;x86_64"` for a universal
 binary; the SDK defaults to x86_64 only.
 
 The external (`cccrpc~.mxo` / `cccrpc~.mxe64`) is written to
-`plugins/max/externals/`. Copy it and `cccrpc~/cccrpc~.maxhelp` into a folder
-in your Max search path (e.g. `~/Documents/Max 8/Library`).
+`plugins/max/externals/`. Copy it and the object's `.maxhelp` into a folder in
+your Max search path (e.g. `~/Documents/Max 8/Library`). For `cccrpc` also copy
+`cccrpc-spectrum.maxpat`, which its help patcher loads into `pfft~`.
 
 ### cccrpc~
 
