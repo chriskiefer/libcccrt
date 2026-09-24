@@ -33,22 +33,23 @@ Windows; the MSVC build via `build-windows.ps1` below is the reference.
 
 ### cccrpc — frames, lists and spectra
 
-    cccrpc [highDim] [lowDim] [maxFrame] [maxLowDim]
+    cccrpc [@attribute value ...]
 
 Analyses one complete frame and outputs a single value: send a `list`, or set
 `@buffer <name>` and send a `bang` to analyse a `buffer~`. The left outlet is
 the complexity, the right outlet the number of values actually analysed.
 
-| argument    | default | description                                          |
-|-------------|---------|------------------------------------------------------|
-| `highDim`   | 16      | projection window length in values (`h`)             |
-| `lowDim`    | 2       | initial projection dimensions (`l`)                  |
-| `maxFrame`  | 4096    | longest frame accepted, in values                    |
-| `maxLowDim` | 8       | upper limit for `@lowdim`                            |
+| attribute    | default | description                                          |
+|--------------|---------|------------------------------------------------------|
+| `@highdim`   | 16      | projection window length in values (`h`)             |
+| `@lowdim`    | 2       | projection dimensions (`l`)                          |
+| `@maxframe`  | 4096    | longest frame accepted, in values                    |
+| `@maxlowdim` | 8       | `@lowdim` values preallocated                        |
 
-`@lowdim`, `@res`, `@rpchop` and `@normalize` work as in `cccrpc~` (in
-`@normalize 2` the reference is a random frame of the same length). Frame
-preparation adds:
+`@res`, `@rpchop` and `@normalize` work as in `cccrpc~` (in `@normalize 2` the
+reference is a random frame of the same length), as do the older positional
+arguments `[highDim] [lowDim] [maxFrame] [maxLowDim]`. Changing `@highdim`,
+`@maxframe` or `@maxlowdim` reallocates. Frame preparation adds:
 
 | attribute   | default | description                                                    |
 |-------------|---------|-----------------------------------------------------------------|
@@ -61,7 +62,7 @@ preparation adds:
 #### Analysing FFT spectra
 
 Fed a magnitude spectrum, RPC slides its projection window along the
-**frequency** axis: `highDim` is a number of adjacent bins and `@rpchop` a bin
+**frequency** axis: `@highdim` is a number of adjacent bins and `@rpchop` a bin
 hop. Regular spectral structure (a harmonic series) projects onto the same
 histogram cells repeatedly and scores low; dense or noisy spectra score high.
 Measured on 1024-point spectra (`h` 16, `l` 2, `res` 10, DC bin skipped):
@@ -119,26 +120,31 @@ your Max search path (e.g. `~/Documents/Max 8/Library`). For `cccrpc` also copy
 
 ### cccrpc~
 
-    cccrpc~ [highDim] [lowDim] [maxWinSize] [maxLowDim]
+    cccrpc~ [@attribute value ...]
 
-| argument     | default | description                                                  |
-|--------------|---------|--------------------------------------------------------------|
-| `highDim`    | 10      | projection window length in samples (`h` in the paper)       |
-| `lowDim`     | 4       | initial number of projection dimensions (`l`)                |
-| `maxWinSize` | 500     | maximum analysis window in ms (sets buffer size)             |
-| `maxLowDim`  | 8       | upper limit for `@lowdim` (raised to `lowDim` if larger)     |
-
-`highDim`, `maxWinSize` and `maxLowDim` are fixed at creation.
+Every setting is an attribute: type it in the box, send it as a message, or
+edit it in the inspector, where it is saved with the patch.
 
 | attribute  | default | description                                            |
 |------------|---------|--------------------------------------------------------|
-| `@lowdim`  | `lowDim` arg | number of projection dimensions, `l` (1 .. `maxLowDim`) |
-| `@winsize` | 25      | analysis window in ms (clamped to `maxWinSize`)        |
+| `@highdim` | 10      | projection window length in samples (`h` in the paper) |
+| `@lowdim`  | 4       | number of projection dimensions, `l`                   |
+| `@maxlowdim` | 8     | `@lowdim` values preallocated                          |
+| `@maxwinsize` | 500  | maximum analysis window in ms (sets buffer size)       |
+| `@winsize` | 25      | analysis window in ms (clamped to `@maxwinsize`)       |
 | `@hopsize` | 0.5     | analysis hop as a fraction of `winsize`                |
 | `@res`     | 10      | histogram resolution per dimension                     |
-| `@rpchop`  | 0.5     | hop between projection windows, as a fraction of `highDim` |
+| `@rpchop`  | 0.5     | hop between projection windows, as a fraction of `@highdim` |
 | `@downsample` | 1    | average this many input samples into one before analysis   |
 | `@normalize` | 0     | output scaling: 0 raw, 1 by the maximum possible, 2 by white noise |
+
+Older patches' positional arguments `[highDim] [lowDim] [maxWinSize]
+[maxLowDim]` still work; a typed or saved attribute takes precedence.
+
+`@highdim`, `@maxwinsize` and `@maxlowdim` size the analysis buffers. Changing
+them rebuilds the buffers on the main thread; the audio thread swaps the new
+ones in at the start of its next signal vector (no locks or allocation in the
+perform routine), and the analysis restarts from an empty window.
 
 `@downsample N` reduces CPU use by a factor of N: the window still spans
 `winsize` milliseconds but holds N times fewer points, so the analysis is N
@@ -169,8 +175,8 @@ falls as `res` grows. That is the metric's sensitivity control, so expect to
 scale the output in the patch for a given parameter set; normalisation just
 stops the range jumping when parameters change.
 
-In the notation of the paper (Kiefer 2023): `h` = `highDim`, `l` =
-`@lowdim`, `alpha` = `@rpchop` × `highDim` samples, `beta` = `@res`.
+In the notation of the paper (Kiefer 2023): `h` = `@highdim`, `l` =
+`@lowdim`, `alpha` = `@rpchop` × `@highdim` samples, `beta` = `@res`.
 
 #### Keeping the output out of the ceiling
 
@@ -197,9 +203,11 @@ than adding structure (use `@rpchop 0.25` or lower if HF matters); and
 removes HF before analysis and shortens the window — prefer a larger
 `@hopsize` for saving CPU when high frequencies matter.
 
-`@lowdim` can change while running: the projection matrix is generated once
-for `maxLowDim` rows and a projection into `l` dimensions uses its first `l`
-rows, so no reallocation happens on the audio thread.
+`@lowdim` can change while running: the projection matrix is generated for
+`@maxlowdim` rows and a projection into `l` dimensions uses its first `l`
+rows, so no reallocation is needed. A `@lowdim` above `@maxlowdim` rebuilds
+the buffers as above; the result is the same either way, since the histogram
+rescales each projected dimension to its own range.
 
 Signal in. Two outlets:
 

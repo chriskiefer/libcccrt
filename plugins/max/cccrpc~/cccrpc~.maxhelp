@@ -13,7 +13,7 @@
    100.0,
    100.0,
    640.0,
-   560.0
+   620.0
   ],
   "bglocked": 0,
   "openinpresentation": 0,
@@ -56,9 +56,9 @@
       20.0,
       50.0,
       560.0,
-      60.0
+      75
      ],
-     "text": "Measures the dynamical complexity of a signal by projecting sliding windows through a fixed random matrix and counting the occupied cells of a low-dimensional histogram. Arguments: highDim (h, projection window in samples), lowDim (l, projection dimensions), maxWinSize (ms), maxLowDim (upper limit for @lowdim). Kiefer 2023, Sound and Music Computing."
+     "text": "Measures the dynamical complexity of a signal by projecting sliding windows through a fixed random matrix and counting the occupied cells of a low-dimensional histogram. Kiefer 2023, Sound and Music Computing. Every setting is an attribute: type it in the box (@lowdim 4), send it as a message, or edit it in the inspector, where it is saved with the patch. The arguments of older patches (highDim lowDim maxWinSize maxLowDim) still work."
     }
    },
    {
@@ -285,7 +285,7 @@
       340.0,
       20.0
      ],
-     "text": "attributes: lowdim (l), analysis window (ms), hop (fraction of window),"
+     "text": "attributes: send a message, or use the inspector"
     }
    },
    {
@@ -296,11 +296,11 @@
      "numoutlets": 0,
      "patching_rect": [
       250.0,
-      318.0,
-      340.0,
-      33.0
+      378.0,
+      370.0,
+      48.0
      ],
-     "text": "histogram resolution, projection hop (fraction of highDim), downsample factor (N x less CPU), output normalisation"
+     "text": "highdim, maxlowdim and maxwinsize set buffer sizes: changing them reallocates and restarts the analysis. lowdim above maxlowdim also reallocates."
     }
    },
    {
@@ -311,11 +311,11 @@
      "numoutlets": 2,
      "patching_rect": [
       30.0,
-      360.0,
-      110.0,
+      420.0,
+      215.0,
       22.0
      ],
-     "text": "cccrpc~ 10 2 500",
+     "text": "cccrpc~ @highdim 10 @maxwinsize 500",
      "outlettype": [
       "signal",
       "float"
@@ -330,7 +330,7 @@
      "numoutlets": 1,
      "patching_rect": [
       30.0,
-      400.0,
+      460.0,
       80.0,
       22.0
      ],
@@ -348,7 +348,7 @@
      "numoutlets": 2,
      "patching_rect": [
       30.0,
-      435.0,
+      495.0,
       60.0,
       22.0
      ],
@@ -366,7 +366,7 @@
      "numoutlets": 0,
      "patching_rect": [
       100.0,
-      435.0,
+      495.0,
       180.0,
       20.0
      ],
@@ -381,7 +381,7 @@
      "numoutlets": 0,
      "patching_rect": [
       30.0,
-      480.0,
+      540.0,
       45.0,
       45.0
      ]
@@ -395,7 +395,7 @@
      "numoutlets": 0,
      "patching_rect": [
       85.0,
-      492.0,
+      552.0,
       200.0,
       20.0
      ],
@@ -414,7 +414,7 @@
      ],
      "patching_rect": [
       160.0,
-      400.0,
+      460.0,
       60.0,
       22.0
      ]
@@ -428,7 +428,7 @@
      "numoutlets": 0,
      "patching_rect": [
       225.0,
-      400.0,
+      460.0,
       260.0,
       20.0
      ],
@@ -486,7 +486,7 @@
       55.0,
       22.0
      ],
-     "text": "lowdim 4"
+     "text": "lowdim 2"
     }
    },
    {
@@ -574,6 +574,63 @@
       20.0
      ],
      "text": "raw / max / noise = 1"
+    }
+   },
+   {
+    "box": {
+     "id": "obj-a1",
+     "maxclass": "attrui",
+     "attr": "highdim",
+     "numinlets": 1,
+     "numoutlets": 1,
+     "outlettype": [
+      ""
+     ],
+     "parameter_enable": 0,
+     "patching_rect": [
+      250.0,
+      322.0,
+      150.0,
+      22.0
+     ]
+    }
+   },
+   {
+    "box": {
+     "id": "obj-a2",
+     "maxclass": "attrui",
+     "attr": "maxlowdim",
+     "numinlets": 1,
+     "numoutlets": 1,
+     "outlettype": [
+      ""
+     ],
+     "parameter_enable": 0,
+     "patching_rect": [
+      410.0,
+      322.0,
+      150.0,
+      22.0
+     ]
+    }
+   },
+   {
+    "box": {
+     "id": "obj-a3",
+     "maxclass": "attrui",
+     "attr": "maxwinsize",
+     "numinlets": 1,
+     "numoutlets": 1,
+     "outlettype": [
+      ""
+     ],
+     "parameter_enable": 0,
+     "patching_rect": [
+      250.0,
+      350.0,
+      150.0,
+      22.0
+     ]
     }
    }
   ],
@@ -810,6 +867,42 @@
     "patchline": {
      "source": [
       "obj-n2",
+      0
+     ],
+     "destination": [
+      "obj-rpc",
+      0
+     ]
+    }
+   },
+   {
+    "patchline": {
+     "source": [
+      "obj-a1",
+      0
+     ],
+     "destination": [
+      "obj-rpc",
+      0
+     ]
+    }
+   },
+   {
+    "patchline": {
+     "source": [
+      "obj-a2",
+      0
+     ],
+     "destination": [
+      "obj-rpc",
+      0
+     ]
+    }
+   },
+   {
+    "patchline": {
+     "source": [
+      "obj-a3",
       0
      ],
      "destination": [

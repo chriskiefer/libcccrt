@@ -56,9 +56,9 @@
       20.0,
       46.0,
       600.0,
-      20.0
+      60.0
      ],
-     "text": "Analyses one complete frame of values - a list, or the contents of a buffer~ - and outputs a single complexity value. Arguments: highDim (h, projection window in values), lowDim (l), maxFrame, maxLowDim.  Left outlet: the value. Right outlet: how many values were analysed."
+     "text": "Analyses one complete frame of values - a list, or the contents of a buffer~ - and outputs a single complexity value. Left outlet: the value. Right outlet: how many values were analysed. Every setting is an attribute: type it in the box, send it as a message, or edit it in the inspector, where it is saved with the patch. The arguments of older patches (highDim lowDim maxFrame maxLowDim) still work."
     }
    },
    {
@@ -264,10 +264,10 @@
      "patching_rect": [
       30.0,
       285.0,
-      95.2,
+      175.0,
       22.0
      ],
-     "text": "cccrpc 16 2",
+     "text": "cccrpc @highdim 16 @lowdim 2",
      "outlettype": [
       "float",
       "int"
@@ -693,10 +693,10 @@
      "patching_rect": [
       300.0,
       567.0,
-      520.0,
+      560.0,
       22.0
      ],
-     "text": "cccrpc 16 2 1024 @buffer spectrum @skip 1 @bins 511 @logmag 1 @normalize 2",
+     "text": "cccrpc @highdim 16 @maxframe 1024 @buffer spectrum @skip 1 @bins 511 @logmag 1 @normalize 2",
      "outlettype": [
       "float",
       "int"
@@ -770,6 +770,59 @@
      "outlettype": [
       ""
      ]
+    }
+   },
+   {
+    "box": {
+     "id": "obj-a1",
+     "maxclass": "attrui",
+     "attr": "highdim",
+     "numinlets": 1,
+     "numoutlets": 1,
+     "outlettype": [
+      ""
+     ],
+     "parameter_enable": 0,
+     "patching_rect": [
+      380.0,
+      238.0,
+      150.0,
+      22.0
+     ]
+    }
+   },
+   {
+    "box": {
+     "id": "obj-a2",
+     "maxclass": "attrui",
+     "attr": "maxframe",
+     "numinlets": 1,
+     "numoutlets": 1,
+     "outlettype": [
+      ""
+     ],
+     "parameter_enable": 0,
+     "patching_rect": [
+      540.0,
+      238.0,
+      150.0,
+      22.0
+     ]
+    }
+   },
+   {
+    "box": {
+     "id": "obj-a3",
+     "maxclass": "comment",
+     "numinlets": 1,
+     "numoutlets": 0,
+     "patching_rect": [
+      380.0,
+      264.0,
+      420.0,
+      33.0
+     ],
+     "text": "highdim, maxframe and maxlowdim set buffer sizes: changing them reallocates. lowdim above maxlowdim also reallocates."
     }
    }
   ],
@@ -1094,6 +1147,30 @@
      ],
      "destination": [
       "obj-39",
+      0
+     ]
+    }
+   },
+   {
+    "patchline": {
+     "source": [
+      "obj-a1",
+      0
+     ],
+     "destination": [
+      "obj-14",
+      0
+     ]
+    }
+   },
+   {
+    "patchline": {
+     "source": [
+      "obj-a2",
+      0
+     ],
+     "destination": [
+      "obj-14",
       0
      ]
     }
